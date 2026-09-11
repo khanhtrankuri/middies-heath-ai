@@ -1,0 +1,58 @@
+model:
+  name: Qwen/Qwen3-8B
+  attention_implementation: auto
+
+quantization:
+  enabled: true
+  bits: 4
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: bfloat16
+
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  bias: none
+
+data:
+  processed_dir: data/processed
+
+dataset_mix:
+  vietnamese: 0.65
+  english: 0.35
+
+training:
+  max_seq_length: 4096
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 1.0e-4
+  num_train_epochs: 1
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  logging_steps: 10
+  eval_strategy: steps
+  eval_steps: 250
+  save_strategy: steps
+  save_steps: 250
+  save_total_limit: 3
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  optim: paged_adamw_8bit
+  dataloader_num_workers: 4
+  packing: false
+  seed: 42
+
+output:
+  dir: models/stage1_consult
+
+generation:
+  max_new_tokens: 384
+  temperature: 0.3
+  top_p: 0.9
+  repetition_penalty: 1.05
+
