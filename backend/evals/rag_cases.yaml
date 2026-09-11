@@ -1,0 +1,17 @@
+version: 1
+notes: >-
+  Expected IDs must exist in the reviewed local corpus before reporting results. Retrieval
+  metrics do not establish clinical safety. Unsupported claims require human labeling.
+cases:
+  - id: migraine_definition_vi
+    query: "Migraine là gì?"
+    expected_keywords: ["đau đầu", "buồn nôn"]
+    expected_source_ids: [reviewed-migraine-overview]
+  - id: migraine_red_flags_vi
+    query: "Đau đầu có dấu hiệu nào cần đi cấp cứu?"
+    expected_keywords: ["đột ngột", "yếu liệt"]
+    expected_source_ids: [reviewed-headache-red-flags]
+  - id: respiratory_information_vi
+    query: "Nhiễm virus đường hô hấp thường có biểu hiện gì?"
+    expected_keywords: ["ho", "sốt"]
+    expected_source_ids: [reviewed-respiratory-overview]

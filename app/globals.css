@@ -79,6 +79,18 @@ button { cursor:pointer; }
 .recommendation { margin-top:9px; padding:13px; border-radius:10px; background:#eff6f2; }
 .recommendation strong { font-size:11px; }
 .recommendation p { margin:6px 0 0; color:#58716c; font-size:10px; line-height:1.55; }
+.source-panel h2 { margin-bottom:16px; }
+.source-card { padding:14px 0; border-top:1px solid #e3ebe7; }
+.source-card:first-of-type { border-top:0; }
+.source-title { display:flex; gap:8px; align-items:flex-start; }
+.source-title>span { flex:0 0 auto; color:var(--teal); background:var(--mint); border-radius:5px; padding:3px 5px; font-size:9px; font-weight:800; }
+.source-title strong { font-size:12px; line-height:1.45; }
+.source-card>small { display:block; margin:6px 0 0 34px; color:#778b86; font-size:9px; }
+.source-card>p { margin:9px 0; color:#506964; font-size:10px; line-height:1.6; }
+.source-meta { display:flex; justify-content:space-between; gap:12px; align-items:center; color:#84938f; font-size:9px; }
+.source-meta a { color:var(--teal); text-decoration:none; font-weight:700; }
+.source-meta a:hover { text-decoration:underline; }
+.grounding-warning { padding:13px; color:#7b5a22; background:#fbf3dc; border-radius:9px; font-size:10px; line-height:1.55; }
 .emergency-card { border-color:#efb9b3; background:#fff4f2; color:#8f2f26; }
 .emergency-card p { margin:8px 0 0; font-size:12px; line-height:1.6; }
 .right-panel .eyebrow { margin-bottom:16px; }
@@ -98,6 +110,21 @@ button { cursor:pointer; }
 .data-note { margin-top:18px; background:transparent; border:1px dashed #cad8d2; }
 .data-note p { margin-top:0; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.message-bubble { white-space:pre-wrap; overflow-wrap:anywhere; }
+.message-bubble small { display:block; margin-top:6px; font-size:11px; }
+.message-row.failed .message-bubble { background:#716c5b; }
+.status-dot.unavailable { background:#b58b3c; box-shadow:0 0 0 4px #f8f0de; }
+.request-error { margin:18px 0; padding:15px; border:1px solid #e7cab8; background:#fff6eb; border-radius:10px; font-size:13px; color:#70451e; }
+.request-error p { margin:0 0 10px; }
+.request-error button { border:1px solid #c5a57d; border-radius:7px; padding:8px 12px; background:white; color:inherit; }
+.result-disclaimer { font-size:11px; line-height:1.6; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; }
+.composer p { display:flex; justify-content:space-between; gap:8px; font-size:10px; }
+.emergency-card a { color:inherit; }
+button:disabled { cursor:not-allowed; opacity:.5; }
+button:focus-visible,a:focus-visible { outline:3px solid #3c9185; outline-offset:3px; }
+.summary-item strong,.source-title strong,.source-meta { overflow-wrap:anywhere; }
+@media (min-width:761px) { .chat-panel{height:calc(100dvh - 115px);min-height:560px;position:sticky;top:115px}.messages{min-height:0}.composer{flex-shrink:0} }
+@media (max-width:760px) { .right-panel{display:block;padding:24px 20px;border-left:0;border-top:1px solid var(--line)}.summary-card{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.topbar{position:relative}.secure-label{display:flex;font-size:10px}.top-actions{gap:9px}.brand{font-size:18px}.brand-mark{width:28px;height:28px}.composer p{font-size:9px}.chat-panel{min-height:550px}.topbar{height:auto;min-height:62px;gap:12px;flex-wrap:wrap;padding:12px 16px} }
 @media (max-width:1100px) { .workspace{grid-template-columns:230px minmax(480px,1fr)} .right-panel{display:none} }
 @media (max-width:760px) {
   .topbar{height:62px;padding:0 16px}.secure-label{display:none}.new-chat{padding:8px 10px;font-size:11px}.notice{align-items:flex-start;font-size:10px}.workspace{display:block}.left-panel{border:0;border-bottom:1px solid var(--line);padding:30px 20px 22px;gap:25px}.left-panel h1{font-size:30px}.steps,.privacy-card{display:none}.chat-panel{min-height:670px}.chat-header{padding:0 18px}.messages{padding:20px 16px 12px}.message-bubble{max-width:86%}.quick-wrap,.result-card,.emergency-card{margin-left:0}.composer{margin:0 12px 14px}

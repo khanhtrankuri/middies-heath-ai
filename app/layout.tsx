@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin", "latin-ext"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin", "latin-ext"] });
-
-export const metadata: Metadata = {
-  title: "Meddies Health AI",
-  description: "Trợ lý AI hỗ trợ sàng lọc và tư vấn sức khỏe ban đầu bằng tiếng Việt.",
-  other: { "codex-preview": "development" },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host") ?? "localhost:5173";
+  const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
+  const origin = new URL(`${local ? "http" : "https"}://${host}`);
+  const title = "MedAI — Meddies Health AI";
+  const description = "Hiểu triệu chứng, chủ động chăm sóc. Trợ lý thông tin sức khỏe bằng tiếng Việt.";
+  const image = new URL("/og.png", origin).href;
+  return {
+    title, description, metadataBase: origin,
+    icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+    openGraph: { title, description, type: "website", locale: "vi_VN", images: [{ url: image, alt: "MedAI — Hiểu triệu chứng, chủ động chăm sóc." }] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="vi"><body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body></html>;
+  return <html lang="vi"><body>{children}</body></html>;
 }

@@ -50,3 +50,14 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+
+# local model training artifacts
+/backend/data/processed/
+/backend/data/processed_4060_smoke/
+/backend/data/rag_index/
+/backend/models/
+
+# local RTX 4060 diagnostic environment
+/.python/
+/.venv-4060/
+/.uv-cache/
