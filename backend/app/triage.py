@@ -27,10 +27,21 @@ def _fold(value: str) -> str:
 
 def find_red_flags(text: str) -> list[str]:
     folded = _fold(text)
+
+    def present(phrase: str) -> bool:
+        needle = _fold(phrase)
+        for match in re.finditer(r"\b" + re.escape(needle) + r"\b", folded):
+            prefix = folded[max(0, match.start() - 28) : match.start()]
+            local_clause = re.split(r"\b(?:nhung|ma|tuy nhien)\b|[,.;]", prefix)[-1]
+            if {"khong", "chua", "ko"} & set(local_clause.split()[-4:]):
+                continue
+            return True
+        return False
+
     return [
         label
         for label, phrases in RED_FLAGS.items()
-        if any(_fold(phrase) in folded for phrase in phrases)
+        if any(present(phrase) for phrase in phrases)
     ]
 
 
