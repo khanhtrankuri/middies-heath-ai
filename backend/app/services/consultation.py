@@ -55,11 +55,19 @@ class ConsultationOrchestrator:
     async def _degraded_answer(
         self, messages: list[dict[str, str]], action: str, patient_state: dict[str, object]
     ) -> ConsultationResponse:
-        reply = await self.inference.generate(
-            [{"role": "system", "content": DEGRADED_PROMPT}, *trim_conversation(messages)]
-        )
+        allow_ungrounded = os.getenv("MEDDIES_ALLOW_UNGROUNDED", "false").lower() in {"1", "true", "yes"}
+        if allow_ungrounded or self.provider_name == "stub":
+            reply = await self.inference.generate(
+                [{"role": "system", "content": DEGRADED_PROMPT}, *trim_conversation(messages)]
+            )
+        else:
+            reply = (
+                "Tôi chưa có nguồn tham khảo phù hợp để trả lời câu hỏi này. "
+                "Tôi không thể kết luận nguyên nhân hoặc đề xuất điều trị từ thông tin hiện có. "
+                "Bạn nên trao đổi với nhân viên y tế để được đánh giá phù hợp."
+            )
         notice = (
-            "Nguồn y khoa đã kiểm duyệt hiện chưa sẵn sàng; phần trả lời này có mức độ "
+            "Nguồn y khoa tham khảo hiện chưa sẵn sàng; phần trả lời này có mức độ "
             "kiểm chứng thấp hơn và không kèm trích dẫn."
         )
         return ConsultationResponse(
@@ -73,12 +81,14 @@ class ConsultationOrchestrator:
         )
 
     async def respond(self, messages: list[dict[str, str]]) -> ConsultationResponse:
-        user_text = " ".join(
-            item["content"] for item in messages if item.get("role") == "user"
-        )
         state = patient_state_from_messages(messages)
         state_payload = state.model_dump(mode="json")
-        red_flags = find_red_flags(user_text)
+        # Never let negation or an educational question in another turn erase
+        # a reported emergency. Assistant text is deliberately excluded.
+        red_flags = list(dict.fromkeys(
+            flag for item in messages if item.get("role") == "user"
+            for flag in find_red_flags(item["content"])
+        ))
         if red_flags:
             country = os.getenv(
                 "MEDDIES_EMERGENCY_COUNTRY", os.getenv("EMERGENCY_COUNTRY", "VN")
@@ -106,11 +116,16 @@ class ConsultationOrchestrator:
                 "Bạn là MedAI. Chỉ hỏi 1–2 câu ngắn để thu thập dữ liệu triệu chứng còn thiếu "
                 "(ưu tiên thời gian, mức độ, vị trí, triệu chứng kèm và dấu hiệu nguy hiểm). "
                 "Không đưa chẩn đoán, dữ kiện y khoa hoặc trích dẫn. Không lặp lại câu đã được trả lời.\n\n"
+                "Nếu thiếu thời gian khởi phát, BẮT BUỘC hỏi triệu chứng bắt đầu từ khi nào hoặc kéo dài bao lâu.\n"
                 f"Trạng thái hiện tại: {state.concise_summary()}"
             )
             reply = await self.inference.generate(
                 [{"role": "system", "content": question_prompt}, *trim_conversation(messages)]
             )
+            if not state.duration and not re.search(
+                r"bắt đầu|từ khi|bao lâu|kéo dài|thời gian|when|how long", reply, re.I
+            ):
+                reply = "Triệu chứng bắt đầu từ khi nào và kéo dài bao lâu?"
             return ConsultationResponse(
                 reply=_remove_certain_diagnosis(reply),
                 provider=self.provider_name,

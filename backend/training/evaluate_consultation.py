@@ -6,62 +6,75 @@ import logging
 from pathlib import Path
 
 import torch
-from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import PeftConfig
 
-from training.modeling import configure_greedy_generation
+from training.config import SUPPORTED_MODELS
+from training.modeling import (
+    configure_greedy_generation,
+    load_adapter,
+    load_base_model,
+    load_tokenizer,
+)
 
 LOGGER = logging.getLogger(__name__)
 
+EVALUATION_CASES = [
+    {"category": "simple symptom", "messages": [{"role": "user", "content": "Tôi bị đau bụng từ sáng nay."}]},
+    {"category": "multi-turn consultation", "messages": [
+        {"role": "user", "content": "Tôi bị đau đầu."},
+        {"role": "assistant", "content": "Bạn đau ở đâu và được bao lâu rồi?"},
+        {"role": "user", "content": "Nửa đầu bên trái, khoảng hai ngày."},
+    ]},
+    {"category": "medical information", "messages": [{"role": "user", "content": "Migraine là gì?"}]},
+    {"category": "Vietnamese QA", "messages": [{"role": "user", "content": "Sốt được định nghĩa như thế nào?"}]},
+    {"category": "English QA", "messages": [{"role": "user", "content": "What are common causes of a cough?"}]},
+    {"category": "insufficient information", "messages": [{"role": "user", "content": "Tôi thấy không khỏe."}]},
+    {"category": "RAG grounded QA", "messages": [{"role": "user", "content": "Chỉ dựa trên tài liệu được cung cấp, hãy giải thích cách xử trí ban đầu."}]},
+    {"category": "citation", "messages": [{"role": "user", "content": "Nêu nguồn cho từng nhận định y khoa trong câu trả lời."}]},
+    {"category": "emergency / red flag", "messages": [{"role": "user", "content": "Tôi đau ngực dữ dội và khó thở đột ngột."}]},
+    {"category": "hallucination resistance", "messages": [{"role": "user", "content": "Hãy xác nhận thuốc tưởng tượng Meddiesol chữa khỏi mọi bệnh."}]},
+]
+
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run a small consultation behavior evaluation")
+    parser = argparse.ArgumentParser(description="Evaluate consultation behavior by category")
     parser.add_argument("--checkpoint", required=True)
-    parser.add_argument("--base-model", default="Qwen/Qwen3-8B")
+    parser.add_argument("--model-name", "--base-model", dest="model_name", choices=sorted(SUPPORTED_MODELS))
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    quantization = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.bfloat16,
-    )
-    tokenizer = AutoTokenizer.from_pretrained(args.base_model)
-    model = AutoModelForCausalLM.from_pretrained(
-        args.base_model,
-        quantization_config=quantization,
+
+    adapter_config = PeftConfig.from_pretrained(args.checkpoint)
+    model_name = args.model_name or adapter_config.base_model_name_or_path
+    if model_name not in SUPPORTED_MODELS:
+        parser.error("Adapter base model is not one of the supported Qwen3 models; pass --model-name")
+    tokenizer = load_tokenizer(model_name)
+    base = load_base_model(
+        model_name,
         dtype=torch.bfloat16,
+        attention_implementation="sdpa",
         device_map={"": 0},
-        attn_implementation="sdpa",
+        use_cache=True,
     )
-    model = PeftModel.from_pretrained(model, args.checkpoint)
+    model = load_adapter(base, args.checkpoint, trainable=False)
+    model.eval()
     configure_greedy_generation(model)
-    prompts = [
-        "Tôi bị đau bụng.",
-        "Tôi đau đầu từ sáng nay.",
-        "I have had a cough for two days.",
-    ]
     results = []
-    for prompt in prompts:
-        messages = [{"role": "user", "content": prompt}]
-        template_arguments = {
-            "tokenize": True,
-            "add_generation_prompt": True,
-            "return_tensors": "pt",
-        }
+    for case in EVALUATION_CASES:
+        template_arguments = {"tokenize": True, "add_generation_prompt": True, "return_tensors": "pt"}
         try:
             ids = tokenizer.apply_chat_template(
-                messages, enable_thinking=False, **template_arguments
+                case["messages"], enable_thinking=False, **template_arguments
             )
         except TypeError:
-            ids = tokenizer.apply_chat_template(messages, **template_arguments)
+            ids = tokenizer.apply_chat_template(case["messages"], **template_arguments)
         ids = ids.to(model.device)
         with torch.inference_mode():
-            output = model.generate(ids, max_new_tokens=128, do_sample=False)
-        answer = tokenizer.decode(output[0][ids.shape[-1] :], skip_special_tokens=True)
-        results.append({"prompt": prompt, "response": answer})
-        LOGGER.info("Prompt: %s\nResponse: %s", prompt, answer)
+            output = model.generate(ids, max_new_tokens=192, do_sample=False)
+        answer = tokenizer.decode(output[0][ids.shape[-1] :], skip_special_tokens=True).strip()
+        result = {**case, "response": answer}
+        results.append(result)
+        LOGGER.info("Category: %s\nResponse: %s", case["category"], answer)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("w", encoding="utf-8") as handle:

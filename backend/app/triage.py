@@ -9,13 +9,18 @@ DISCLAIMER = (
 )
 
 RED_FLAGS: dict[str, tuple[str, ...]] = {
-    "khó thở": ("kho tho", "không thở được", "khong tho duoc"),
-    "đau ngực": ("dau nguc", "tức ngực", "tuc nguc"),
-    "ngất": ("ngat", "bất tỉnh", "bat tinh"),
-    "co giật": ("co giat",),
-    "yếu hoặc liệt": ("yeu liet", "liệt", "liet"),
+    "khó thở": ("kho tho", "khong tho duoc", "khong the tho", "cannot breathe", "can't breathe", "difficulty breathing", "shortness of breath"),
+    "đau ngực": ("dau nguc", "tuc nguc", "chest pain", "chest pressure"),
+    "ngất": ("ngat", "bat tinh", "unconscious", "passed out"),
+    "co giật": ("co giat", "seizure"),
+    "yếu hoặc liệt": ("yeu liet", "liet", "yeu mot ben", "one sided weakness"),
     "méo miệng": ("meo mieng",),
     "chảy máu nhiều": ("chay mau nhieu", "máu không cầm", "mau khong cam"),
+    "rối loạn nói đột ngột": ("noi kho dot ngot", "dot ngot noi kho", "noi ngong dot ngot", "slurred speech"),
+    "tím tái": ("moi tim tai", "tim moi", "blue lips"),
+    "sưng đường thở": ("sung luoi", "sung hong", "swollen tongue", "throat swelling"),
+    "nôn ra máu": ("non ra mau", "vomiting blood"),
+    "đau đầu dữ dội đột ngột": ("dau dau du doi dot ngot", "dot ngot dau dau du doi", "sudden severe headache"),
 }
 
 
@@ -25,23 +30,38 @@ def _fold(value: str) -> str:
     return re.sub(r"\s+", " ", without_marks).strip()
 
 
-def find_red_flags(text: str) -> list[str]:
+def is_information_question(text: str) -> bool:
+    """Only exempt clear educational questions without a personal symptom report."""
     folded = _fold(text)
+    personal = r"\b(?:toi|minh|em|chau|con toi|me toi|bo toi|i|my|he|she)\b"
+    question = r"(?:la gi\s*[?？]?$|^(?:what is|what are|giai thich|thong tin ve|nguyen nhan cua|trieu chung cua|dau hieu cua)\b)"
+    return bool(re.search(question, folded) and not re.search(personal, folded))
 
-    def present(phrase: str) -> bool:
-        needle = _fold(phrase)
-        for match in re.finditer(r"\b" + re.escape(needle) + r"\b", folded):
-            prefix = folded[max(0, match.start() - 28) : match.start()]
-            local_clause = re.split(r"\b(?:nhung|ma|tuy nhien)\b|[,.;]", prefix)[-1]
-            if {"khong", "chua", "ko"} & set(local_clause.split()[-4:]):
-                continue
-            return True
-        return False
 
+def symptom_present(text: str, phrase: str) -> bool:
+    folded, needle = _fold(text), _fold(phrase)
+    for match in re.finditer(r"\b" + re.escape(needle) + r"\b", folded):
+        if needle == "liet" and re.match(r"\s+ke\b", folded[match.end():]):
+            continue
+        prefix = folded[:match.start()]
+        if needle == "non" and re.search(r"\bbuon\s+$", prefix):
+            continue
+        clause = re.split(r"\b(?:nhung|ma|tuy nhien|but|however|va toi|and i)\b|[,.;!?\n]", prefix)[-1]
+        # "không chỉ", "không hết", "không giảm" do not deny the symptom.
+        clause = re.sub(r"\b(?:khong (?:chi|het|giam)|not only)\b", "", clause)
+        if re.search(r"\b(?:khong|chua|ko|no|not|without|deny|denies)\b(?:\s+\w+){0,4}\s*$", clause):
+            continue
+        return True
+    return False
+
+
+def find_red_flags(text: str) -> list[str]:
+    if is_information_question(text):
+        return []
     return [
         label
         for label, phrases in RED_FLAGS.items()
-        if any(present(phrase) for phrase in phrases)
+        if any(symptom_present(text, phrase) for phrase in phrases)
     ]
 
 

@@ -7,6 +7,53 @@ from typing import Any
 
 import yaml
 
+SUPPORTED_MODELS = frozenset({"Qwen/Qwen3-1.7B", "Qwen/Qwen3-0.6B"})
+
+# Resolution order is always: defaults -> hardware YAML -> explicit CLI.
+DEFAULT_CONFIG: dict[str, Any] = {
+    "model": {"name": "Qwen/Qwen3-1.7B", "dtype": "bfloat16", "attention_implementation": "auto"},
+    "lora": {"r": 8, "alpha": 16, "dropout": 0.05, "bias": "none", "target_modules": ["q_proj", "v_proj"]},
+    "data": {"processed_dir": "data/processed"},
+    "dataset_mix": {"vietnamese": 0.45, "english": 0.20, "RandomQA": 0.35},
+    "training": {
+        "max_seq_length": 1024,
+        "per_device_train_batch_size": 1,
+        "per_device_eval_batch_size": 1,
+        "gradient_accumulation_steps": 16,
+        "learning_rate": 1.0e-4,
+        "num_train_epochs": 1,
+        "bf16": True,
+        "fp16": False,
+        "gradient_checkpointing": True,
+        "packing": True,
+        "optim": "adamw_torch",
+        "warmup_ratio": 0.03,
+        "lr_scheduler_type": "cosine",
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "dataloader_num_workers": 2,
+        "logging_steps": 10,
+        "eval_strategy": "steps",
+        "eval_steps": 500,
+        "save_strategy": "steps",
+        "save_steps": 500,
+        "save_total_limit": 2,
+        "seed": 42,
+    },
+    "output": {"dir": "models/stage1_consult"},
+    "tracking": {"enabled": False},
+}
+
+
+def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    result = deepcopy(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = deepcopy(value)
+    return result
+
 
 def load_config(path: str | Path) -> dict[str, Any]:
     config_path = Path(path)
@@ -14,19 +61,16 @@ def load_config(path: str | Path) -> dict[str, Any]:
         loaded = yaml.safe_load(handle)
     if not isinstance(loaded, dict):
         raise ValueError(f"Training config must be a YAML mapping: {config_path}")
-    return loaded
+    return deep_merge(DEFAULT_CONFIG, loaded)
 
 
 def apply_cli_overrides(config: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
-    """Apply explicit CLI values without silently changing YAML defaults."""
-
+    """Apply only explicit CLI values; CLI has the highest precedence."""
     result = deepcopy(config)
     mappings = {
         "model_name": ("model", "name"),
         "attention_implementation": ("model", "attention_implementation"),
         "output_dir": ("output", "dir"),
-        "quant_type": ("quantization", "quant_type"),
-        "double_quant": ("quantization", "double_quant"),
         "max_seq_length": ("training", "max_seq_length"),
         "per_device_train_batch_size": ("training", "per_device_train_batch_size"),
         "per_device_eval_batch_size": ("training", "per_device_eval_batch_size"),
@@ -52,27 +96,29 @@ def apply_cli_overrides(config: dict[str, Any], args: argparse.Namespace) -> dic
         "lora_r": ("lora", "r"),
         "lora_alpha": ("lora", "alpha"),
         "lora_dropout": ("lora", "dropout"),
+        "lora_target_modules": ("lora", "target_modules"),
         "packing": ("training", "packing"),
+        "wandb": ("tracking", "enabled"),
+        "wandb_project": ("tracking", "project"),
+        "wandb_run_name": ("tracking", "run_name"),
+        "wandb_mode": ("tracking", "mode"),
+        "wandb_log_model": ("tracking", "log_model"),
     }
-    for argument, path in mappings.items():
+    for argument, path_parts in mappings.items():
         value = getattr(args, argument, None)
         if value is None:
             continue
         cursor = result
-        for key in path[:-1]:
+        for key in path_parts[:-1]:
             cursor = cursor.setdefault(key, {})
-        cursor[path[-1]] = value
+        cursor[path_parts[-1]] = value
     return result
 
 
 def add_training_overrides(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--model-name")
-    parser.add_argument(
-        "--attention-implementation", choices=("auto", "flash_attention_2", "sdpa")
-    )
+    parser.add_argument("--model-name", choices=sorted(SUPPORTED_MODELS))
+    parser.add_argument("--attention-implementation", choices=("auto", "flash_attention_2", "sdpa"))
     parser.add_argument("--output-dir")
-    parser.add_argument("--quant-type", choices=("nf4", "fp4"))
-    parser.add_argument("--double-quant", action=argparse.BooleanOptionalAction, default=None)
     parser.add_argument("--max-seq-length", type=int)
     parser.add_argument("--per-device-train-batch-size", type=int)
     parser.add_argument("--per-device-eval-batch-size", type=int)
@@ -81,9 +127,7 @@ def add_training_overrides(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--num-train-epochs", type=float)
     parser.add_argument("--bf16", action=argparse.BooleanOptionalAction, default=None)
     parser.add_argument("--fp16", action=argparse.BooleanOptionalAction, default=None)
-    parser.add_argument(
-        "--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=None
-    )
+    parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=None)
     parser.add_argument("--logging-steps", type=int)
     parser.add_argument("--eval-strategy", choices=("steps", "epoch", "no"))
     parser.add_argument("--eval-steps", type=int)
@@ -94,31 +138,48 @@ def add_training_overrides(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--lr-scheduler-type")
     parser.add_argument("--weight-decay", type=float)
     parser.add_argument("--max-grad-norm", type=float)
-    parser.add_argument("--optim", choices=("paged_adamw_8bit", "adamw_torch"))
+    parser.add_argument("--optim", choices=("adamw_torch_fused", "adamw_torch"))
     parser.add_argument("--seed", type=int)
     parser.add_argument("--dataloader-num-workers", type=int)
     parser.add_argument("--lora-r", type=int)
     parser.add_argument("--lora-alpha", type=int)
     parser.add_argument("--lora-dropout", type=float)
+    parser.add_argument("--lora-target-modules", nargs="+")
     parser.add_argument("--packing", action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument("--wandb", action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument("--wandb-project")
+    parser.add_argument("--wandb-run-name")
+    parser.add_argument("--wandb-mode", choices=("online", "offline", "disabled"))
+    parser.add_argument("--wandb-log-model", choices=("false", "end", "checkpoint"))
 
 
-def validate_4090_config(config: dict[str, Any]) -> None:
-    training = config["training"]
-    quantization = config["quantization"]
-    if not quantization.get("enabled") or quantization.get("bits") != 4:
-        raise ValueError("The RTX 4090 workflow requires 4-bit QLoRA quantization")
-    if quantization.get("quant_type") != "nf4":
-        raise ValueError("The production RTX 4090 workflow requires NF4 quantization")
-    if quantization.get("compute_dtype") != "bfloat16":
-        raise ValueError("The production RTX 4090 workflow requires BF16 compute")
-    if training.get("per_device_train_batch_size", 0) < 1:
-        raise ValueError("per_device_train_batch_size must be at least 1")
-    if training.get("gradient_accumulation_steps", 0) < 1:
-        raise ValueError("gradient_accumulation_steps must be at least 1")
-    if training.get("max_seq_length", 0) < 128:
-        raise ValueError("max_seq_length is unexpectedly small")
-    if not training.get("gradient_checkpointing"):
-        raise ValueError("gradient checkpointing is mandatory for this workflow")
+def validate_training_config(config: dict[str, Any]) -> None:
+    """Validate BF16 LoRA independently of a particular NVIDIA GPU model."""
+    model = config.get("model", {})
+    training = config.get("training", {})
+    lora = config.get("lora", {})
+    if model.get("name") not in SUPPORTED_MODELS:
+        raise ValueError(f"model.name must be one of: {', '.join(sorted(SUPPORTED_MODELS))}")
+    if model.get("dtype") != "bfloat16":
+        raise ValueError("model.dtype must be bfloat16 for the BF16 LoRA training path")
     if not training.get("bf16") or training.get("fp16"):
-        raise ValueError("The default RTX 4090 workflow requires bf16=true and fp16=false")
+        raise ValueError("BF16 LoRA requires training.bf16=true and training.fp16=false")
+    for key in ("per_device_train_batch_size", "per_device_eval_batch_size", "gradient_accumulation_steps"):
+        if int(training.get(key, 0)) < 1:
+            raise ValueError(f"training.{key} must be at least 1")
+    if int(training.get("max_seq_length", 0)) < 128:
+        raise ValueError("training.max_seq_length is unexpectedly small")
+    if training.get("optim") not in {"adamw_torch", "adamw_torch_fused"}:
+        raise ValueError("training.optim must be adamw_torch or adamw_torch_fused")
+    if int(lora.get("r", 0)) < 1 or int(lora.get("alpha", 0)) < 1:
+        raise ValueError("LoRA rank and alpha must be positive")
+    if not 0 <= float(lora.get("dropout", -1)) < 1:
+        raise ValueError("lora.dropout must be in [0, 1)")
+    targets = lora.get("target_modules")
+    if not isinstance(targets, list) or not targets or not all(isinstance(x, str) and x for x in targets):
+        raise ValueError("lora.target_modules must be a non-empty list of module names")
+    if len(set(targets)) != len(targets):
+        raise ValueError("lora.target_modules cannot contain duplicates")
+    mix = config.get("dataset_mix", {})
+    if not mix or "RandomQuestion" in mix or any(float(weight) <= 0 for weight in mix.values()):
+        raise ValueError("dataset_mix must use positive SFT subsets and cannot include prompt-only RandomQuestion")

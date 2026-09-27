@@ -38,7 +38,12 @@ async def lifespan(application: FastAPI):
         create_provider(provider_name),
         max_generations=int(os.getenv("MEDDIES_MAX_GENERATIONS", "1")),
     )
-    manager.load()
+    try:
+        manager.load()
+    except (RuntimeError, OSError, ValueError) as error:
+        # Keep deterministic emergency routing reachable if model setup fails.
+        # Do not substitute a demo provider or advertise the model as ready.
+        LOGGER.error("Model failed to load (%s): %s", type(error).__name__, error)
     application.state.inference = manager
     application.state.model_provider = provider_name
     rag = create_rag_service(RAGConfig.from_env())

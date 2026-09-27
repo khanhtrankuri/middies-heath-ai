@@ -1,6 +1,8 @@
 from training.data.processing import (
     AssistantOnlyDataCollator,
     clean_messages,
+    conversational_windows,
+    load_jsonl_rows,
     pack_tokenized_examples,
     tokenize_with_assistant_only_loss,
 )
@@ -122,6 +124,21 @@ def test_cleaning_removes_think_and_rejects_no_assistant() -> None:
         {"role": "assistant", "content": "How can I help?"},
     ]
     assert clean_messages([{"role": "user", "content": "Hello"}]) is None
+    assert clean_messages([{"role": "assistant", "content": "Hello"}]) is None
+
+
+def test_prepared_loader_skips_conversations_without_user(tmp_path) -> None:
+    path = tmp_path / "prepared.jsonl"
+    path.write_text(
+        '{"id":"bad","messages":[{"role":"assistant","content":"orphan"}]}\n'
+        '{"id":"good","messages":[{"role":"user","content":"hello"},'
+        '{"role":"assistant","content":"hi"}]}\n',
+        encoding="utf-8",
+    )
+
+    rows = load_jsonl_rows([path])
+
+    assert [row["id"] for row in rows] == ["good"]
 
 
 def test_cleaning_removes_malformed_reasoning_prefix() -> None:
@@ -152,3 +169,33 @@ def test_packing_preserves_masks_and_collator_masks_padding() -> None:
     batch = AssistantOnlyDataCollator(FakeChatTokenizer())(packed)
     assert batch["input_ids"].shape == (1, 8)
     assert batch["labels"][0, -1].item() == -100
+
+
+def test_long_conversation_becomes_overlapping_supervised_windows() -> None:
+    tokenizer = FakeChatTokenizer()
+    messages = []
+    for index in range(5):
+        messages.extend([
+            {"role": "user", "content": f"u{index}"},
+            {"role": "assistant", "content": f"a{index}"},
+        ])
+    windows = conversational_windows(tokenizer, messages, max_length=19, overlap_turns=1)
+    assert len(windows) > 1
+    supervised_answers = [
+        item["content"] for window in windows for item in window if item["role"] == "assistant"
+    ]
+    assert set(supervised_answers) == {f"a{index}" for index in range(5)}
+    assert any(
+        set(item["content"] for item in left) & set(item["content"] for item in right)
+        for left, right in zip(windows, windows[1:])
+    )
+
+
+def test_packing_never_labels_separator_or_splits_samples() -> None:
+    examples = [
+        {"input_ids": [1, 2, 3], "attention_mask": [1, 1, 1], "labels": [-100, 2, 3]},
+        {"input_ids": [4, 5, 6], "attention_mask": [1, 1, 1], "labels": [-100, 5, 6]},
+    ]
+    packed = pack_tokenized_examples(examples, max_length=4, eos_token_id=99)
+    assert [item["input_ids"] for item in packed] == [[1, 2, 3, 99], [4, 5, 6, 99]]
+    assert all(item["labels"][-1] == -100 for item in packed)

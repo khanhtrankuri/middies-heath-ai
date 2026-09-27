@@ -124,6 +124,28 @@ def test_missing_rag_uses_degraded_mode_without_fake_citations(tmp_path: Path) -
     assert "[S1]" not in response.reply
 
 
+def test_missing_evidence_does_not_generate_unsupported_medical_advice(tmp_path):
+    inference = SpyInference()
+    rag = RAGService(RAGConfig(enabled=False, index_path=tmp_path))
+    response = asyncio.run(ConsultationOrchestrator(inference, rag, "transformers").respond(
+        [{"role": "user", "content": "Migraine là gì?"}]
+    ))
+    assert not inference.calls
+    assert response.grounding_status == "degraded"
+    assert response.citations == []
+
+
+def test_missing_duration_is_always_requested(tmp_path):
+    class UnfocusedInference:
+        async def generate(self, messages):
+            return "Triệu chứng xảy ra thường xuyên không?"
+    response = asyncio.run(ConsultationOrchestrator(UnfocusedInference(), SpyRAG(tmp_path), "test").respond(
+        [{"role": "user", "content": "Tôi đau đầu"}]
+    ))
+    assert response.action == "ASK_MORE"
+    assert "bao lâu" in response.reply
+
+
 def test_uncited_generation_is_not_labeled_grounded(tmp_path: Path) -> None:
     class UncitedInference(SpyInference):
         async def generate(self, messages):

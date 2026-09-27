@@ -15,7 +15,7 @@ from .config import RAGConfig, RetrievedChunk
 from .embeddings import EmbeddingProvider, create_embedding_provider
 from .loaders import load_knowledge_directory
 from .normalizer import content_hash
-from .reranker import Reranker
+from .reranker import Reranker, create_reranker
 from .retriever import Retriever
 from .vector_store import FAISSVectorStore, new_manifest
 
@@ -64,6 +64,7 @@ class RAGService:
                 raise ValueError("Embedding provider dimension does not match the FAISS index")
             self.vector_store = store
             self.embedding_provider = provider
+            self.reranker = self.reranker or create_reranker(self.config)
             self.retriever = Retriever(provider, store, self.reranker)
             self.error = None
             self.ready = True
@@ -80,17 +81,19 @@ class RAGService:
             raise RAGUnavailableError(self.error or "RAG is not ready")
         return self.retriever.retrieve(
             queries,
-            candidate_k=candidate_k,
+            dense_top_k=max(candidate_k, self.config.dense_top_k),
+            sparse_top_k=self.config.sparse_top_k,
+            fusion_top_k=max(final_k, self.config.fusion_top_k),
             final_k=final_k,
         )
 
     async def retrieve(self, query: str, *, top_k: int = 5) -> list[RetrievedChunk]:
-        requested = max(1, min(top_k, self.config.top_k))
+        requested = max(1, min(top_k, self.config.fusion_top_k))
         try:
             results = await asyncio.to_thread(
                 self._retrieve_sync,
                 [query],
-                candidate_k=max(self.config.top_k, requested),
+                candidate_k=max(self.config.dense_top_k, requested),
                 final_k=requested,
             )
         except RAGUnavailableError:
@@ -110,8 +113,8 @@ class RAGService:
             results = await asyncio.to_thread(
                 self._retrieve_sync,
                 queries,
-                candidate_k=self.config.top_k,
-                final_k=min(count, self.config.top_k),
+                candidate_k=self.config.dense_top_k,
+                final_k=min(count, self.config.fusion_top_k),
             )
         except RAGUnavailableError:
             raise
