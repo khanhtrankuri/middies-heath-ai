@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { localEmergency, safeSourceUrl } from "../app/consultation.ts";
+
+const safetyCases = JSON.parse(readFileSync(new URL("../backend/evals/safety_cases.json", import.meta.url), "utf8"));
+test("offline safety matches shared Vietnamese and English regression cases", () => {
+  for (const item of safetyCases) assert.equal(localEmergency(item.text), item.emergency, item.id);
+});
 
 test("offline red flags recognize accented and unaccented reports", () => {
   for (const text of ["Tôi khó thở", "Toi dau nguc", "Tôi không thở được", "Tôi bị bất tỉnh", "Máu không cầm"]) {

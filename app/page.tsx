@@ -152,7 +152,7 @@ export default function Home() {
         setStage("result");
       }
       setApiOnline(true);
-      if (data.provider !== "safety-router") setModelReady(true);
+      if (data.provider !== "safety-router" && data.grounding_status !== "degraded") setModelReady(true);
     } catch (cause: unknown) {
       if (activeRequest.current !== controller) return;
       const failed: Message = { id, role: "user", text: clean, failed: true };

@@ -27,12 +27,17 @@ export const MAX_HISTORY_MESSAGES = 64;
 export function localEmergency(text: string): boolean {
   const folded = text.toLowerCase().replaceAll("đ", "d").normalize("NFD")
     .replace(/\p{M}/gu, "").replace(/\s+/g, " ").trim();
-  const phrases = ["kho tho", "khong tho duoc", "dau nguc", "tuc nguc", "ngat", "bat tinh", "co giat", "yeu liet", "liet", "meo mieng", "chay mau nhieu", "mau khong cam"];
+  const personal = /\b(?:toi|minh|em|chau|con toi|me toi|bo toi|i|my|he|she)\b/;
+  const question = /(?:la gi\s*[?？]?$|^(?:what is|what are|giai thich|thong tin ve|nguyen nhan cua|trieu chung cua|dau hieu cua)\b)/;
+  if (question.test(folded) && !personal.test(folded)) return false;
+  const phrases = ["kho tho", "khong tho duoc", "khong the tho", "cannot breathe", "can't breathe", "difficulty breathing", "shortness of breath", "dau nguc", "tuc nguc", "chest pain", "chest pressure", "ngat", "bat tinh", "unconscious", "passed out", "co giat", "seizure", "yeu liet", "liet", "yeu mot ben", "one sided weakness", "meo mieng", "chay mau nhieu", "mau khong cam", "noi kho dot ngot", "dot ngot noi kho", "noi ngong dot ngot", "slurred speech", "moi tim tai", "tim moi", "blue lips", "sung luoi", "sung hong", "swollen tongue", "throat swelling", "non ra mau", "vomiting blood", "dau dau du doi dot ngot", "dot ngot dau dau du doi", "sudden severe headache"];
   return phrases.some((phrase) => {
     for (const match of folded.matchAll(new RegExp(`\\b${phrase}\\b`, "g"))) {
-      const prefix = folded.slice(Math.max(0, match.index - 28), match.index);
-      const clause = prefix.split(/\b(?:nhung|ma|tuy nhien)\b|[,.;]/).at(-1) ?? "";
-      if (clause.trim().split(/\s+/).slice(-4).some((word) => ["khong", "chua", "ko"].includes(word))) continue;
+      if (phrase === "liet" && /^\s+ke\b/.test(folded.slice(match.index + phrase.length))) continue;
+      const prefix = folded.slice(0, match.index);
+      const clause = (prefix.split(/\b(?:nhung|ma|tuy nhien|but|however|va toi|and i)\b|[,.;!?\n]/).at(-1) ?? "")
+        .replace(/\b(?:khong (?:chi|het|giam)|not only)\b/g, "");
+      if (/\b(?:khong|chua|ko|no|not|without|deny|denies)\b(?:\s+\w+){0,4}\s*$/.test(clause)) continue;
       return true;
     }
     return false;
