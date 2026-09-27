@@ -34,6 +34,7 @@ def _config(path: Path, *, enabled: bool = True) -> RAGConfig:
         chunk_size=200,
         chunk_overlap=20,
         embedding_batch_size=2,
+        reranker="score",
     )
 
 
@@ -104,4 +105,3 @@ def test_ingestion_deduplicates_exact_documents_and_chunks(tmp_path: Path) -> No
     assert stats.chunk_count >= 1
     assert (output / "manifest.json").is_file()
     assert (output / "vectors.faiss").is_file()
-

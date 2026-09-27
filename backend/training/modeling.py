@@ -4,12 +4,13 @@ import logging
 from typing import Any
 
 import torch
-from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import LoraConfig, PeftModel, get_peft_model
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.utils import is_flash_attn_2_available
 
+from training.config import SUPPORTED_MODELS
+
 LOGGER = logging.getLogger(__name__)
-LORA_CANDIDATES = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
 
 
 def resolve_attention_implementation(preference: str) -> str:
@@ -21,92 +22,128 @@ def resolve_attention_implementation(preference: str) -> str:
         if not is_flash_attn_2_available():
             raise RuntimeError("flash-attn was requested but is not installed or CUDA-compatible")
         return "flash_attention_2"
-    if not is_flash_attn_2_available():
-        LOGGER.info("flash-attn is unavailable; using PyTorch SDPA")
-        return "sdpa"
-    LOGGER.info("flash-attn detected; using FlashAttention2")
-    return "flash_attention_2"
+    if is_flash_attn_2_available():
+        LOGGER.info("FlashAttention2 is available and selected")
+        return "flash_attention_2"
+    LOGGER.info("FlashAttention2 is unavailable; using PyTorch SDPA")
+    return "sdpa"
 
 
-def discover_lora_targets(model: Any) -> list[str]:
-    """Inspect the loaded architecture and return validated linear-layer suffixes."""
-
-    matched_full_names: list[str] = []
-    for name, module in model.named_modules():
-        leaf = name.rsplit(".", 1)[-1]
-        module_type = module.__class__.__name__.lower()
-        if leaf in LORA_CANDIDATES and "linear" in module_type:
-            matched_full_names.append(name)
-    targets = [candidate for candidate in LORA_CANDIDATES if any(
-        name == candidate or name.endswith(f".{candidate}") for name in matched_full_names
-    )]
-    if not targets:
-        raise RuntimeError("No supported LoRA linear modules were found in the loaded Qwen architecture")
-    LOGGER.info("Exact modules receiving LoRA (%d):\n%s", len(matched_full_names), "\n".join(matched_full_names))
-    return targets
-
-
-def quantization_config(config: dict[str, Any]) -> BitsAndBytesConfig:
-    quant = config["quantization"]
-    return BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type=quant.get("quant_type", "nf4"),
-        bnb_4bit_use_double_quant=bool(quant.get("double_quant", True)),
-        bnb_4bit_compute_dtype=torch.bfloat16,
+def load_tokenizer(model_name: str, *, local_files_only: bool = False) -> Any:
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name, use_fast=True, local_files_only=local_files_only
     )
-
-
-def load_tokenizer(model_name: str) -> Any:
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     return tokenizer
 
 
-def load_qlora_model(
-    config: dict[str, Any], *, adapter_path: str | None = None, trainable_adapter: bool = True
+def load_base_model(
+    model_name: str,
+    *,
+    dtype: torch.dtype = torch.bfloat16,
+    attention_implementation: str = "auto",
+    device_map: Any = None,
+    local_files_only: bool = False,
+    use_cache: bool = False,
 ) -> Any:
-    model_name = config["model"]["name"]
-    attention = resolve_attention_implementation(config["model"].get("attention_implementation", "auto"))
+    """Shared, non-quantized loader for SFT, future preference training, and inference."""
+    if model_name not in SUPPORTED_MODELS and not local_files_only:
+        raise ValueError(f"Unsupported pretrained model {model_name!r}")
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        quantization_config=quantization_config(config),
-        dtype=torch.bfloat16,
-        device_map={"": 0},
-        attn_implementation=attention,
+        dtype=dtype,
+        device_map=device_map,
+        attn_implementation=resolve_attention_implementation(attention_implementation),
+        local_files_only=local_files_only,
     )
-    model.config.use_cache = False
-    model.gradient_checkpointing_enable()
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    model.config.use_cache = use_cache
+    return model
 
-    if adapter_path:
-        model = PeftModel.from_pretrained(model, adapter_path, is_trainable=trainable_adapter)
-        LOGGER.info("Loaded %s adapter from %s", "trainable" if trainable_adapter else "frozen", adapter_path)
-    else:
-        targets = discover_lora_targets(model)
-        lora = config["lora"]
-        model = get_peft_model(
-            model,
-            LoraConfig(
-                task_type="CAUSAL_LM",
-                r=int(lora["r"]),
-                lora_alpha=int(lora["alpha"]),
-                lora_dropout=float(lora["dropout"]),
-                bias=lora.get("bias", "none"),
-                target_modules=targets,
-            ),
+
+def _available_linear_suffixes(model: Any) -> dict[str, list[str]]:
+    available: dict[str, list[str]] = {}
+    for name, module in model.named_modules():
+        if "linear" not in module.__class__.__name__.lower():
+            continue
+        available.setdefault(name.rsplit(".", 1)[-1], []).append(name)
+    return available
+
+
+def validate_lora_targets(model: Any, target_modules: list[str]) -> list[str]:
+    available = _available_linear_suffixes(model)
+    missing = [target for target in target_modules if target not in available]
+    if missing:
+        raise ValueError(
+            "Configured LoRA target module(s) do not exist as linear layers: " + ", ".join(missing)
         )
-    unexpected_trainable = [
+    matched = [name for target in target_modules for name in available[target]]
+    LOGGER.info("Validated %d exact LoRA target layers", len(matched))
+    return matched
+
+
+def assert_only_lora_trainable(model: Any) -> None:
+    unexpected = [
         name for name, parameter in model.named_parameters()
         if parameter.requires_grad and "lora_" not in name
     ]
-    if unexpected_trainable:
+    if unexpected:
         raise RuntimeError(
             "Base model parameters must remain frozen; unexpected trainable parameters: "
-            + ", ".join(unexpected_trainable[:10])
+            + ", ".join(unexpected[:10])
         )
-    model.print_trainable_parameters()
+
+
+def attach_lora(model: Any, lora: dict[str, Any]) -> Any:
+    targets = list(lora["target_modules"])
+    validate_lora_targets(model, targets)
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+    model = get_peft_model(
+        model,
+        LoraConfig(
+            task_type="CAUSAL_LM",
+            r=int(lora["r"]),
+            lora_alpha=int(lora["alpha"]),
+            lora_dropout=float(lora["dropout"]),
+            bias=str(lora.get("bias", "none")),
+            target_modules=targets,
+        ),
+    )
+    assert_only_lora_trainable(model)
+    return model
+
+
+def load_adapter(model: Any, adapter_path: str, *, trainable: bool = False) -> Any:
+    model = PeftModel.from_pretrained(model, adapter_path, is_trainable=trainable)
+    if trainable:
+        assert_only_lora_trainable(model)
+    return model
+
+
+def load_training_model(
+    config: dict[str, Any], *, adapter_path: str | None = None, trainable_adapter: bool = True
+) -> Any:
+    model = load_base_model(
+        config["model"]["name"],
+        dtype=torch.bfloat16,
+        attention_implementation=config["model"].get("attention_implementation", "auto"),
+        device_map={"": 0},
+        use_cache=False,
+    )
+    if config["training"].get("gradient_checkpointing"):
+        model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
+    if adapter_path:
+        model = load_adapter(model, adapter_path, trainable=trainable_adapter)
+    else:
+        model = attach_lora(model, config["lora"])
+    assert_only_lora_trainable(model)
+    log_model_summary(model, config)
     return model
 
 
@@ -119,40 +156,31 @@ def model_parameter_counts(model: Any) -> tuple[int, int]:
     return trainable, total
 
 
-def log_gpu_and_model(model: Any, config: dict[str, Any]) -> None:
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is required: this workflow is designed for one NVIDIA RTX 4090")
-    if torch.cuda.device_count() != 1:
-        raise RuntimeError(
-            f"Expected exactly one visible CUDA device, found {torch.cuda.device_count()}. "
-            "Set CUDA_VISIBLE_DEVICES=0."
-        )
-    properties = torch.cuda.get_device_properties(0)
-    total_vram = properties.total_memory / 1024**3
+def log_model_summary(model: Any, config: dict[str, Any]) -> None:
     trainable, total = model_parameter_counts(model)
-    base_dtype = getattr(model.get_input_embeddings().weight, "dtype", "unknown")
     LOGGER.info(
-        "GPU: %s\nVRAM total: %.2f GB\nVRAM allocated: %.2f GB\nVRAM reserved: %.2f GB\n"
-        "Model: %s\nBase model embedding dtype: %s\nCompute dtype: bfloat16\nQuantization: NF4 4-bit\n"
-        "Trainable parameters: %.2f M\nTotal parameters represented: %.2f B",
-        properties.name,
-        total_vram,
-        torch.cuda.memory_allocated() / 1024**3,
-        torch.cuda.memory_reserved() / 1024**3,
-        config["model"]["name"],
-        base_dtype,
-        trainable / 1e6,
-        total / 1e9,
+        "Base model: %s\nTotal parameters: %d\nTrainable parameters: %d\nTrainable %%: %.6f\n"
+        "LoRA rank: %s\nLoRA alpha: %s\nLoRA target modules: %s",
+        config["model"]["name"], total, trainable, 100 * trainable / total if total else 0.0,
+        config["lora"]["r"], config["lora"]["alpha"], ", ".join(config["lora"]["target_modules"]),
     )
-    if "4090" not in properties.name:
-        LOGGER.warning("Validated for RTX 4090 24GB; detected %s", properties.name)
-    if total_vram > 25:
-        LOGGER.warning("More than 24GB is visible, but no setting will rely on the extra memory")
+
+
+def log_hardware(config: dict[str, Any]) -> None:
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is unavailable; BF16 LoRA training requires a CUDA GPU")
+    properties = torch.cuda.get_device_properties(0)
+    LOGGER.info(
+        "GPU name: %s\nVRAM total: %.2f GB\nCUDA version: %s\nPyTorch version: %s\n"
+        "BF16 support: %s\nFlashAttention availability: %s",
+        properties.name, properties.total_memory / 1024**3, torch.version.cuda, torch.__version__,
+        torch.cuda.is_bf16_supported(), is_flash_attn_2_available(),
+    )
+    if config["training"].get("bf16") and not torch.cuda.is_bf16_supported():
+        raise RuntimeError(f"{properties.name} does not support BF16 required by this profile")
 
 
 def configure_greedy_generation(model: Any) -> None:
-    """Clear sampling-only defaults so greedy generation is warning-free."""
-
     for name in ("temperature", "top_p", "top_k", "min_p"):
         if hasattr(model.generation_config, name):
             setattr(model.generation_config, name, None)

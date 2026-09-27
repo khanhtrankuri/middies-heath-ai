@@ -187,10 +187,12 @@ def load_knowledge_directory(path: str | Path) -> list[Document]:
         raise FileNotFoundError(f"Knowledge directory does not exist: {root}")
     documents: list[Document] = []
     for source in sorted(item for item in root.rglob("*") if item.is_file()):
+        # Repository instructions are not medical evidence.
+        if source.stem.casefold() in {"readme", "license", "changelog", "agents"}:
+            continue
         if source.suffix.lower() not in SUPPORTED_SUFFIXES or source.name.endswith(
             ".metadata.json"
         ):
             continue
         documents.extend(load_document(source))
     return documents
-

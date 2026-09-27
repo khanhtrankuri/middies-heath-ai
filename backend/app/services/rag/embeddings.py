@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import os
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any
@@ -48,8 +49,14 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
                 raise RuntimeError(
                     "Install sentence-transformers to use the production embedding provider"
                 ) from error
-            self._model = SentenceTransformer(self.model_name, device=self.device)
-            self.dimension = int(self._model.get_sentence_embedding_dimension())
+            self._model = SentenceTransformer(
+                self.model_name, device=self.device,
+                local_files_only=os.getenv("MEDDIES_LOCAL_FILES_ONLY", "false").lower() in {"1", "true", "yes"},
+            )
+            get_dimension = getattr(self._model, "get_embedding_dimension", None)
+            if get_dimension is None:
+                get_dimension = self._model.get_sentence_embedding_dimension
+            self.dimension = int(get_dimension())
         return self._model
 
     def _encode(self, texts: Sequence[str]) -> np.ndarray:
@@ -105,4 +112,3 @@ class DeterministicHashEmbeddingProvider(EmbeddingProvider):
 
 def create_embedding_provider(model_name: str, device: str) -> EmbeddingProvider:
     return SentenceTransformerEmbeddingProvider(model_name=model_name, device=device)
-

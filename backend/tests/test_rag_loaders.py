@@ -61,6 +61,13 @@ def test_sidecar_metadata_is_retained(tmp_path: Path) -> None:
     assert document.metadata.page is None
 
 
+def test_directory_instructions_are_not_medical_evidence(tmp_path):
+    (tmp_path / "README.md").write_text("Installation instructions", encoding="utf-8")
+    (tmp_path / "guidance.txt").write_text("Actual guidance", encoding="utf-8")
+    documents = load_knowledge_directory(tmp_path)
+    assert [document.text for document in documents] == ["Actual guidance"]
+
+
 def test_pdf_loader_preserves_one_based_page_metadata(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -86,4 +93,3 @@ def test_pdf_loader_preserves_one_based_page_metadata(
     assert [item.metadata.page for item in documents] == [1, 3]
     assert all(item.metadata.title == "PDF title" for item in documents)
     assert len({item.metadata.document_hash for item in documents}) == 1
-

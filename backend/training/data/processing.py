@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
@@ -13,6 +14,11 @@ THINK_PATTERN = re.compile(r"<think>.*?</think>", flags=re.IGNORECASE | re.DOTAL
 LEADING_REASONING_PATTERN = re.compile(r"^.*?</think>", flags=re.IGNORECASE | re.DOTALL)
 ORPHAN_THINK_TAG = re.compile(r"</?think>", flags=re.IGNORECASE)
 ALLOWED_ROLES = {"system", "user", "assistant"}
+LOGGER = logging.getLogger(__name__)
+
+
+class UntrainableConversationError(ValueError):
+    """A structurally valid conversation cannot produce a supervised token window."""
 
 
 def clean_messages(messages: Any) -> list[dict[str, str]] | None:
@@ -35,7 +41,8 @@ def clean_messages(messages: Any) -> list[dict[str, str]] | None:
         if not content:
             return None
         cleaned.append({"role": role, "content": content})
-    if not any(message["role"] == "assistant" for message in cleaned):
+    roles = {message["role"] for message in cleaned}
+    if "user" not in roles or "assistant" not in roles:
         return None
     return cleaned
 
@@ -60,6 +67,7 @@ def load_jsonl_rows(
         raise ValueError("limit must be at least 1")
     rows: list[dict[str, Any]] = []
     for path in paths:
+        invalid_count = 0
         with Path(path).open("r", encoding="utf-8") as handle:
             for line_number, line in enumerate(handle, start=1):
                 if not line.strip():
@@ -67,9 +75,20 @@ def load_jsonl_rows(
                 value = json.loads(line)
                 if not isinstance(value, dict) or not isinstance(value.get("messages"), list):
                     raise ValueError(f"Invalid prepared row at {path}:{line_number}")
+                messages = clean_messages(value["messages"])
+                if messages is None:
+                    invalid_count += 1
+                    continue
+                value["messages"] = messages
                 rows.append(value)
                 if limit is not None and len(rows) >= limit:
                     return rows
+        if invalid_count:
+            LOGGER.warning(
+                "Skipped %d invalid prepared conversation(s) from %s",
+                invalid_count,
+                path,
+            )
     return rows
 
 
@@ -174,7 +193,9 @@ def tokenize_with_assistant_only_loss(
             for token_id, (token_start, token_end) in zip(input_ids, offsets, strict=True)
         ]
         if all(label == -100 for label in labels):
-            raise ValueError("No assistant tokens remain after truncation")
+            raise UntrainableConversationError(
+                "No assistant tokens remain after truncation"
+            )
         return {"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "labels": labels}
 
     # Minimal tokenizer fallback used by unit tests. It validates prefix stability
@@ -200,8 +221,80 @@ def tokenize_with_assistant_only_loss(
         labels[start:end] = input_ids[start:end]
 
     if all(label == -100 for label in labels):
-        raise ValueError("No assistant tokens remain after truncation")
+        raise UntrainableConversationError(
+            "No assistant tokens remain after truncation"
+        )
     return {"input_ids": input_ids, "attention_mask": [1] * len(input_ids), "labels": labels}
+
+
+def conversational_windows(
+    tokenizer: Any,
+    messages: list[dict[str, str]],
+    *,
+    max_length: int,
+    overlap_turns: int = 1,
+) -> list[list[dict[str, str]]]:
+    """Split long chats at user-turn boundaries while retaining assistant targets.
+
+    System messages are repeated in every window. A turn begins with a user
+    message and includes all following assistant messages up to the next user.
+    """
+    if max_length < 1 or overlap_turns < 0:
+        raise ValueError("max_length must be positive and overlap_turns cannot be negative")
+    if len(_chat_ids(tokenizer, messages, add_generation_prompt=False)) <= max_length:
+        return [messages]
+
+    system = [message for message in messages if message["role"] == "system"]
+    dialogue = [message for message in messages if message["role"] != "system"]
+    turns: list[list[dict[str, str]]] = []
+    current: list[dict[str, str]] = []
+    for message in dialogue:
+        if message["role"] == "user" and current:
+            turns.append(current)
+            current = []
+        current.append(message)
+    if current:
+        turns.append(current)
+    turns = [
+        turn for turn in turns
+        if any(item["role"] == "user" for item in turn)
+        and any(item["role"] == "assistant" for item in turn)
+    ]
+    if not turns:
+        raise UntrainableConversationError(
+            "Conversation has no complete user/assistant turn"
+        )
+
+    windows: list[list[dict[str, str]]] = []
+    start = 0
+    while start < len(turns):
+        end = start
+        best: list[dict[str, str]] | None = None
+        while end < len(turns):
+            candidate = system + [item for turn in turns[start : end + 1] for item in turn]
+            if len(_chat_ids(tokenizer, candidate, add_generation_prompt=False)) > max_length:
+                break
+            best = candidate
+            end += 1
+        if best is None:
+            raise UntrainableConversationError(
+                "A single conversational turn exceeds max_seq_length; shorten the source turn "
+                "or increase max_seq_length"
+            )
+        windows.append(best)
+        if end >= len(turns):
+            break
+        start = max(start + 1, end - overlap_turns)
+    return windows
+
+
+def tokenize_conversation_windows(
+    tokenizer: Any, messages: list[dict[str, str]], *, max_length: int
+) -> list[dict[str, list[int]]]:
+    return [
+        tokenize_with_assistant_only_loss(tokenizer, window, max_length=max_length)
+        for window in conversational_windows(tokenizer, messages, max_length=max_length)
+    ]
 
 
 def pack_tokenized_examples(
@@ -210,21 +303,24 @@ def pack_tokenized_examples(
     """Pack complete masked streams while preserving their label boundaries."""
 
     packed: list[dict[str, list[int]]] = []
-    current = {"input_ids": [], "attention_mask": [], "labels": []}
+    current: dict[str, list[int]] = {"input_ids": [], "attention_mask": [], "labels": []}
     for example in examples:
-        ids = example["input_ids"] + [eos_token_id]
-        labels = example["labels"] + [-100]
-        offset = 0
-        while offset < len(ids):
-            remaining = max_length - len(current["input_ids"])
-            take = min(remaining, len(ids) - offset)
-            current["input_ids"].extend(ids[offset : offset + take])
-            current["attention_mask"].extend([1] * take)
-            current["labels"].extend(labels[offset : offset + take])
-            offset += take
-            if len(current["input_ids"]) == max_length:
+        if len(example["input_ids"]) == max_length:
+            if current["input_ids"]:
                 packed.append(current)
                 current = {"input_ids": [], "attention_mask": [], "labels": []}
+            packed.append({key: list(value) for key, value in example.items()})
+            continue
+        ids = example["input_ids"] + [eos_token_id]
+        labels = example["labels"] + [-100]
+        if len(ids) > max_length:
+            raise ValueError("Packing received an example longer than max_length")
+        if current["input_ids"] and len(current["input_ids"]) + len(ids) > max_length:
+            packed.append(current)
+            current = {"input_ids": [], "attention_mask": [], "labels": []}
+        current["input_ids"].extend(ids)
+        current["attention_mask"].extend([1] * len(ids))
+        current["labels"].extend(labels)
     if current["input_ids"]:
         packed.append(current)
     return packed

@@ -1,0 +1,8 @@
+[
+  {"id":"emergency_vi","messages":[{"role":"user","content":"Tôi không thể thở"}],"action":"EMERGENCY"},
+  {"id":"emergency_en","messages":[{"role":"user","content":"My father has chest pain"}],"action":"EMERGENCY"},
+  {"id":"collect_duration","messages":[{"role":"user","content":"Tôi bị đau đầu"}],"action":"ASK_MORE"},
+  {"id":"medical_information","messages":[{"role":"user","content":"Migraine là gì?"}],"action":"GROUNDED_ANSWER","sources":["nhs-migraine"]},
+  {"id":"respiratory_information","messages":[{"role":"user","content":"Triệu chứng của bệnh do virus đường hô hấp là gì?"}],"action":"GROUNDED_ANSWER","sources":["cdc-respiratory"]},
+  {"id":"followup","messages":[{"role":"user","content":"Tôi đau nửa đầu và buồn nôn"},{"role":"assistant","content":"Triệu chứng kéo dài bao lâu?"},{"role":"user","content":"2 ngày, mức 3/10, không yếu liệt"}],"action":"FINALIZE","sources":["nhs-migraine","nhs-headaches"]}
+]

@@ -74,6 +74,21 @@ def test_readiness_does_not_expose_paths() -> None:
     assert "path" not in response.text.casefold()
 
 
+def test_model_load_failure_keeps_emergency_api_available(monkeypatch):
+    from app import main
+    class BrokenProvider:
+        def load(self):
+            raise RuntimeError("model unavailable")
+        def generate(self, messages):
+            raise RuntimeError("model unavailable")
+    monkeypatch.setattr(main, "create_provider", lambda name: BrokenProvider())
+    with TestClient(app) as api:
+        assert api.get("/ready").json()["model"] is False
+        response = api.post("/api/v1/consultation", json={"messages": [{"role": "user", "content": "Tôi không thể thở"}]})
+        assert response.status_code == 200
+        assert response.json()["action"] == "EMERGENCY"
+
+
 def test_rag_search_returns_503_when_index_is_disabled() -> None:
     with TestClient(app) as lifespan_client:
         response = lifespan_client.post(
