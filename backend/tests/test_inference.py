@@ -1,4 +1,11 @@
-from app.inference import InferenceManager, ModelProvider, StubProvider, VLLMProvider, create_provider
+from app.inference import (
+    InferenceManager,
+    ModelProvider,
+    StubProvider,
+    VLLMProvider,
+    create_provider,
+    unpack_tokenized_prompt,
+)
 import asyncio
 import threading
 import json
@@ -48,8 +55,55 @@ def test_inference_manager_loads_model_once() -> None:
     assert provider.loads == 1
 
 
+def test_unloaded_manager_fails_before_calling_provider() -> None:
+    class FailedProvider(CountingProvider):
+        def __init__(self) -> None:
+            super().__init__()
+            self.generations = 0
+
+        def generate(self, messages: list[dict[str, str]]) -> str:
+            self.generations += 1
+            raise OSError("CUDA library should not be imported again")
+
+    provider = FailedProvider()
+    manager = InferenceManager(provider)
+
+    with pytest.raises(RuntimeError, match="not ready"):
+        asyncio.run(manager.generate([{"role": "user", "content": "test"}]))
+
+    assert provider.generations == 0
+    assert not manager.semaphore.locked()
+
+
+def test_loaded_manager_normalizes_provider_os_errors() -> None:
+    class BrokenGenerationProvider(CountingProvider):
+        def generate(self, messages: list[dict[str, str]]) -> str:
+            raise OSError("internal CUDA DLL path")
+
+    manager = InferenceManager(BrokenGenerationProvider())
+    manager.load()
+
+    with pytest.raises(RuntimeError, match="failed during generation") as caught:
+        asyncio.run(manager.generate([{"role": "user", "content": "test"}]))
+
+    assert isinstance(caught.value.__cause__, OSError)
+
+
 def test_stub_provider_is_available_for_ci() -> None:
     assert isinstance(create_provider("stub"), StubProvider)
+
+
+def test_tokenized_prompt_supports_tensor_and_batch_encoding_outputs() -> None:
+    tensor = object()
+    attention_mask = object()
+
+    assert unpack_tokenized_prompt(tensor) == (tensor, None)
+    assert unpack_tokenized_prompt(
+        {"input_ids": tensor, "attention_mask": attention_mask}
+    ) == (tensor, attention_mask)
+
+    with pytest.raises(RuntimeError, match="input_ids"):
+        unpack_tokenized_prompt({"attention_mask": attention_mask})
 
 
 def test_vllm_uses_tokenizer_chat_template(monkeypatch) -> None:
@@ -87,6 +141,7 @@ def test_cancelling_a_caller_does_not_release_an_active_generation_slot() -> Non
 
     async def exercise():
         manager = InferenceManager(BlockingProvider())
+        manager.load()
         caller = asyncio.create_task(manager.generate([{"role": "user", "content": "test"}]))
         try:
             assert await asyncio.to_thread(entered.wait, 3)

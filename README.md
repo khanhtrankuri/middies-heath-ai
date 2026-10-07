@@ -18,6 +18,9 @@ index và chạy hệ thống được giữ tại một tài liệu duy nhất:
 
 **[Hướng dẫn train và chạy hệ thống](HUONG_DAN_TRAIN_VA_CHAY.md)**
 
+Cấu hình giới hạn API, ranh giới tin cậy đăng nhập và kết quả kiểm tra:
+**[Kiểm tra bảo mật và dependency](SECURITY_REVIEW.md)**.
+
 Chạy nhanh giao diện và backend giả lập, không cần GPU:
 
 ```powershell

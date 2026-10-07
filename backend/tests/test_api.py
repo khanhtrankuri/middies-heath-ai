@@ -89,6 +89,36 @@ def test_model_load_failure_keeps_emergency_api_available(monkeypatch):
         assert response.json()["action"] == "EMERGENCY"
 
 
+def test_model_load_failure_returns_503_without_retrying_provider(monkeypatch):
+    from app import main
+
+    class BlockedProvider:
+        def __init__(self):
+            self.generate_called = False
+
+        def load(self):
+            raise OSError("blocked CUDA DLL at an internal path")
+
+        def generate(self, messages):
+            self.generate_called = True
+            raise OSError("provider must not be called after load failure")
+
+    provider = BlockedProvider()
+    monkeypatch.setattr(main, "create_provider", lambda name: provider)
+
+    with TestClient(app) as api:
+        assert api.get("/ready").json()["model"] is False
+        response = api.post(
+            "/api/v1/consultation",
+            json={"messages": [{"role": "user", "content": "Tôi bị đau bụng."}]},
+        )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Consultation service is temporarily unavailable"}
+    assert "CUDA" not in response.text
+    assert provider.generate_called is False
+
+
 def test_rag_search_returns_503_when_index_is_disabled() -> None:
     with TestClient(app) as lifespan_client:
         response = lifespan_client.post(

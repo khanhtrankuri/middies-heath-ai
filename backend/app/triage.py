@@ -33,9 +33,20 @@ def _fold(value: str) -> str:
 def is_information_question(text: str) -> bool:
     """Only exempt clear educational questions without a personal symptom report."""
     folded = _fold(text)
-    personal = r"\b(?:toi|minh|em|chau|con toi|me toi|bo toi|i|my|he|she)\b"
-    question = r"(?:la gi\s*[?？]?$|^(?:what is|what are|giai thich|thong tin ve|nguyen nhan cua|trieu chung cua|dau hieu cua)\b)"
-    return bool(re.search(question, folded) and not re.search(personal, folded))
+    question = (
+        r"(?:la gi\s*[?？]?$|\b(?:toi (?:muon|can) biet|cho toi biet|"
+        r"liet ke|giai thich|thong tin ve|nguyen nhan cua|trieu chung cua|"
+        r"dau hieu cua|what is|what are|tell me (?:about|what))\b)"
+    )
+    # A first-person pronoun alone does not turn an educational request such as
+    # "Tôi muốn biết khó thở là gì?" into a symptom report. Conversely, an
+    # explicit report remains safety-relevant even when it ends as a question.
+    personal_report = (
+        r"\b(?:toi|minh|em|chau|con toi|me toi|bo toi|i|my (?:mother|father|child))"
+        r"\s+(?:bi|dang|vua|da|cam thay|thay|dau|tuc|kho|ngat|co giat|"
+        r"cannot|can't|have|has|am|is)\b"
+    )
+    return bool(re.search(question, folded) and not re.search(personal_report, folded))
 
 
 def symptom_present(text: str, phrase: str) -> bool:
@@ -46,7 +57,9 @@ def symptom_present(text: str, phrase: str) -> bool:
         prefix = folded[:match.start()]
         if needle == "non" and re.search(r"\bbuon\s+$", prefix):
             continue
-        clause = re.split(r"\b(?:nhung|ma|tuy nhien|but|however|va toi|and i)\b|[,.;!?\n]", prefix)[-1]
+        # Coordination starts a new negation scope. Without this boundary,
+        # "không sốt và đang khó thở" incorrectly negates "khó thở" too.
+        clause = re.split(r"\b(?:va|nhung|ma|tuy nhien|and|but|however)\b|[,.;!?\n]", prefix)[-1]
         # "không chỉ", "không hết", "không giảm" do not deny the symptom.
         clause = re.sub(r"\b(?:khong (?:chi|het|giam)|not only)\b", "", clause)
         if re.search(r"\b(?:khong|chua|ko|no|not|without|deny|denies)\b(?:\s+\w+){0,4}\s*$", clause):

@@ -13,7 +13,7 @@ function stop(code = 0) {
   for (const child of children) child.kill();
 }
 try {
-  children.push(runPython(["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"], "baseline"));
+  children.push(runPython(["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000", "--no-proxy-headers"], "baseline"));
   children.push(spawn(process.execPath, [join(root, "node_modules/vite/bin/vite.js"), "--mode", "local-node", "--host", "127.0.0.1", "--port", "5173", "--strictPort"], {
     cwd: root, stdio: "inherit", env: process.env, windowsHide: true,
   }));

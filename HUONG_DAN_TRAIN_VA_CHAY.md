@@ -418,7 +418,12 @@ node --test tests/rendered-html.test.mjs
 npm.cmd run eval:safety
 npm.cmd run eval:system
 npm.cmd run eval:rag
+npm.cmd run eval:quality
 ```
+
+Để kiểm tra nhanh pipeline với backend `stub`, chạy
+`npm.cmd run eval:quality -- --smoke`. Bộ 200 ca, các ngưỡng chấm điểm và
+judge tùy chọn được mô tả tại [backend/evals/QUALITY.md](backend/evals/QUALITY.md).
 
 ## 16. Lỗi thường gặp
 

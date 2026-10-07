@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .inference import InferenceManager, create_provider
+from .request_limits import RequestLimitsMiddleware
 from .models import (
     ConsultationRequest,
     ConsultationResponse,
@@ -60,6 +61,8 @@ app = FastAPI(
     description="Backend hỗ trợ sàng lọc sức khỏe ban đầu; không cung cấp chẩn đoán y khoa.",
 )
 
+# CORS wraps admission errors too, so browser clients can read 413/429 responses.
+app.add_middleware(RequestLimitsMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins(),

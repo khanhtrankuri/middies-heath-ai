@@ -8,6 +8,7 @@ from app.inference import InferenceManager
 from app.models import ConsultationResponse
 from app.triage import DISCLAIMER, find_red_flags
 
+from .prompt_boundary import INPUT_POLICY, inference_messages
 from .rag.citations import build_citations, cited_source_ids, format_grounding_context, remove_unknown_citations
 from .rag.context_budget import select_chunks_within_budget, trim_conversation
 from .rag.query_builder import (
@@ -58,7 +59,7 @@ class ConsultationOrchestrator:
         allow_ungrounded = os.getenv("MEDDIES_ALLOW_UNGROUNDED", "false").lower() in {"1", "true", "yes"}
         if allow_ungrounded or self.provider_name == "stub":
             reply = await self.inference.generate(
-                [{"role": "system", "content": DEGRADED_PROMPT}, *trim_conversation(messages)]
+                inference_messages(DEGRADED_PROMPT, trim_conversation(messages))
             )
         else:
             reply = (
@@ -116,11 +117,10 @@ class ConsultationOrchestrator:
                 "Bạn là MedAI. Chỉ hỏi 1–2 câu ngắn để thu thập dữ liệu triệu chứng còn thiếu "
                 "(ưu tiên thời gian, mức độ, vị trí, triệu chứng kèm và dấu hiệu nguy hiểm). "
                 "Không đưa chẩn đoán, dữ kiện y khoa hoặc trích dẫn. Không lặp lại câu đã được trả lời.\n\n"
-                "Nếu thiếu thời gian khởi phát, BẮT BUỘC hỏi triệu chứng bắt đầu từ khi nào hoặc kéo dài bao lâu.\n"
-                f"Trạng thái hiện tại: {state.concise_summary()}"
+                "Nếu thiếu thời gian khởi phát, BẮT BUỘC hỏi triệu chứng bắt đầu từ khi nào hoặc kéo dài bao lâu."
             )
             reply = await self.inference.generate(
-                [{"role": "system", "content": question_prompt}, *trim_conversation(messages)]
+                inference_messages(question_prompt, trim_conversation(messages), patient_summary=state.concise_summary())
             )
             if not state.duration and not re.search(
                 r"bắt đầu|từ khi|bao lâu|kéo dài|thời gian|when|how long", reply, re.I
@@ -153,7 +153,7 @@ class ConsultationOrchestrator:
             budgeted_messages = trim_conversation(messages)
             selected = select_chunks_within_budget(
                 chunks,
-                system_prompt=_grounded_prompt(),
+                system_prompt=f"{_grounded_prompt()}\n\n{INPUT_POLICY}",
                 messages=budgeted_messages,
                 patient_summary=state.concise_summary(),
                 max_context_tokens=self.rag.config.max_context_tokens,
@@ -165,17 +165,10 @@ class ConsultationOrchestrator:
 
         citations = build_citations(selected)
         context = format_grounding_context(selected)
-        grounded_messages = [
-            {"role": "system", "content": _grounded_prompt()},
-            {
-                "role": "system",
-                "content": (
-                    f"TRẠNG THÁI NGƯỜI DÙNG:\n{state.concise_summary() or 'Không áp dụng'}\n\n"
-                    f"NGUỒN THAM KHẢO:\n{context}"
-                ),
-            },
-            *budgeted_messages,
-        ]
+        grounded_messages = inference_messages(
+            _grounded_prompt(), budgeted_messages,
+            patient_summary=state.concise_summary(), context=context,
+        )
         reply = await self.inference.generate(grounded_messages)
         reply = remove_unknown_citations(_remove_certain_diagnosis(reply), citations)
         used_ids = cited_source_ids(reply)

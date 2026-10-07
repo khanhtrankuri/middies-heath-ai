@@ -50,6 +50,17 @@ def apply_qwen_chat_template(
         return tokenizer.apply_chat_template(messages, **kwargs)
 
 
+def unpack_tokenized_prompt(rendered: Any) -> tuple[Any, Any | None]:
+    """Normalize chat-template outputs across supported Transformers versions."""
+    if hasattr(rendered, "get"):
+        input_ids = rendered.get("input_ids")
+        attention_mask = rendered.get("attention_mask")
+        if input_ids is None:
+            raise RuntimeError("Qwen chat template did not return input_ids")
+        return input_ids, attention_mask
+    return rendered, None
+
+
 class ModelProvider(ABC):
     @abstractmethod
     def load(self) -> None: ...
@@ -124,8 +135,13 @@ class TransformersProvider(ModelProvider):
             "add_generation_prompt": True,
             "return_tensors": "pt",
         }
-        input_ids = apply_qwen_chat_template(self.tokenizer, messages, **template_kwargs)
+        rendered = apply_qwen_chat_template(self.tokenizer, messages, **template_kwargs)
+        input_ids, attention_mask = unpack_tokenized_prompt(rendered)
         input_ids = input_ids.to(self.model.device)
+        if attention_mask is None:
+            attention_mask = torch.ones_like(input_ids)
+        else:
+            attention_mask = attention_mask.to(self.model.device)
         max_context = int(os.getenv("MEDDIES_MAX_CONTEXT_TOKENS", "4096"))
         max_new_tokens = int(os.getenv("MEDDIES_MAX_NEW_TOKENS", "384"))
         if max_new_tokens < 1 or input_ids.shape[-1] + max_new_tokens > max_context:
@@ -150,7 +166,7 @@ class TransformersProvider(ModelProvider):
                 if hasattr(self.model.generation_config, name):
                     setattr(self.model.generation_config, name, None)
         with torch.inference_mode():
-            output = self.model.generate(input_ids, attention_mask=torch.ones_like(input_ids), **generation)
+            output = self.model.generate(input_ids, attention_mask=attention_mask, **generation)
         return self.tokenizer.decode(output[0][input_ids.shape[-1] :], skip_special_tokens=True).strip()
 
 
@@ -225,6 +241,12 @@ class InferenceManager:
         return self._loaded
 
     async def generate(self, messages: list[dict[str, str]]) -> str:
+        # Startup deliberately keeps the safety router available when loading a
+        # model fails. Do not call into that half-initialized provider later:
+        # providers may import CUDA libraries again and turn a known readiness
+        # failure into an unhandled request-time OSError.
+        if not self._loaded:
+            raise RuntimeError("Model provider is not ready")
         await self.semaphore.acquire()
         work = asyncio.create_task(asyncio.to_thread(self.provider.generate, messages))
 
@@ -237,4 +259,9 @@ class InferenceManager:
         work.add_done_callback(release_when_finished)
         # Cancelling an HTTP request cannot stop an already-running GPU thread.
         # Retain its generation slot until the thread actually completes.
-        return await asyncio.shield(work)
+        try:
+            return await asyncio.shield(work)
+        except OSError as error:
+            # Normalize provider/driver/DLL failures so the API can return its
+            # stable 503 contract without exposing internal filesystem paths.
+            raise RuntimeError("Model provider failed during generation") from error
