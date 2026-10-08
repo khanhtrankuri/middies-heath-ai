@@ -50,6 +50,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.pytest-tmp*/
 
 # local model training artifacts
 /backend/data/processed/
