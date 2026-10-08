@@ -1,0 +1,13 @@
+name: meddies-health-ai
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  # Match the supported interpreter range in pyproject.toml.
+  - python>=3.11,<3.13
+  - pytorch>=2.5
+  - pytorch-cuda=12.4
+  - pip
+  - pip:
+      - -e .[dev]
