@@ -1,0 +1,32 @@
+# Development relevance labels for the six-source starter. Not a held-out clinical benchmark.
+cases:
+  - id: migraine_vi
+    query: "Migraine thường có biểu hiện nào?"
+    expected_source_ids: [nhs-migraine]
+  - id: migraine_en
+    query: "What are common symptoms of migraine?"
+    expected_source_ids: [nhs-migraine]
+  - id: headache_red_flags
+    query: "Đau đầu kèm dấu hiệu nào cần cấp cứu?"
+    expected_source_ids: [nhs-headaches]
+  - id: respiratory_vi
+    query: "Bệnh do virus hô hấp có những triệu chứng gì?"
+    expected_source_ids: [cdc-respiratory]
+  - id: respiratory_prevention
+    query: "Làm sao hạn chế lây nhiễm virus đường hô hấp?"
+    expected_source_ids: [cdc-respiratory]
+  - id: stroke_vi
+    query: "Dấu hiệu nhận biết đột quỵ là gì?"
+    expected_source_ids: [nhs-stroke]
+  - id: stroke_en
+    query: "What are the FAST warning signs of a stroke?"
+    expected_source_ids: [nhs-stroke]
+  - id: breathing_vi
+    query: "Khó thở nghiêm trọng có biểu hiện ra sao?"
+    expected_source_ids: [nhs-breathlessness]
+  - id: diarrhoea_vi
+    query: "Tiêu chảy và nôn cần chú ý điều gì để tránh mất nước?"
+    expected_source_ids: [nhs-diarrhoea]
+  - id: diarrhoea_en
+    query: "When should someone with vomiting and diarrhoea seek help?"
+    expected_source_ids: [nhs-diarrhoea]
