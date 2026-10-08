@@ -25,17 +25,23 @@ Hai nhánh trong bundle:
 | `feat/initial-project` | `ae37ea9` | `2b6e0e3` |
 | `main` | `f439a89` | `6ed5046` |
 
-**Lịch sử repo đang làm việc và remote chưa bị ghi lại.** Bundle chỉ chứa
-lịch sử đã commit trước đợt sửa này; các sửa bảo mật hiện nằm trong working
-tree. Clone từ remote vẫn tải lịch sử cũ cho tới khi cập nhật remote.
+**Cập nhật 2026-10-08: lịch sử remote đã được ghi lại.** Lọc lại từ các ref
+mới nhất, loại thêm `backend/.pytest-tmp-codex-baseline/` (thư mục tạm pytest bị
+commit nhầm), đối chiếu cây file của cả 10 commit (khớp ngoài hai thư mục bị
+loại), rồi cập nhật `main`, `feat/initial-project` và
+`claude/youthful-meitner-0kodvk` bằng `--force-with-lease` với SHA remote đã
+kiểm chứng. Pack: 192,37 MiB → 1,86 MiB.
 
-Để hoàn tất, commit các sửa hiện tại, tạo lại bản sạch từ các ref mới nhất,
-kiểm tra không có commit từ cộng tác viên bị bỏ sót, rồi cập nhật riêng hai
-nhánh bằng `--force-with-lease` với SHA remote đã kiểm chứng. Không dùng
-`push --mirror` vì có ref nội bộ. Việc cập nhật remote cần xác nhận riêng vì
-đổi SHA trên các nhánh dùng chung; các bản clone khác cần đồng bộ lại, và
-không được merge lịch sử cũ trở lại. GitHub có thể còn giữ object qua ref
-khác hoặc cache cho tới khi thu gom.
+| Nhánh | SHA cũ | SHA mới |
+| --- | --- | --- |
+| `main` | `f439a89` | `6ed5046` |
+| `feat/initial-project` | `5d66c4c` | `904d343` |
+| `claude/youthful-meitner-0kodvk` | `9566d9b` | `e08ccf2` |
+
+Mọi bản clone cũ phải clone lại (hoặc `git fetch` rồi `git reset --hard
+origin/<nhánh>` sau khi lưu thay đổi chưa commit) và không được merge lịch sử cũ
+trở lại. GitHub có thể còn giữ object cũ trong cache hoặc qua ref khác cho tới
+khi thu gom.
 
 ## 2. Header danh tính
 
