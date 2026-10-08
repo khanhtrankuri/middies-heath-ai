@@ -23,12 +23,12 @@ from evals.evaluate_quality import (
 def test_case_labels_match_deterministic_router_and_reviewed_corpus():
     sources = load_sources(DEFAULT_SOURCES)
     cases = load_cases(DEFAULT_CASES, sources)
-    assert len(cases) == 200
+    assert len(cases) == 210
     assert Counter(case["group"] for case in cases) == {
-        "emergency": 80, "ask_more": 40, "grounded": 30,
+        "emergency": 90, "ask_more": 40, "grounded": 30,
         "out_of_scope": 20, "trap": 30,
     }
-    assert sum(case.get("emergency_positive") is True for case in cases) == 60
+    assert sum(case.get("emergency_positive") is True for case in cases) == 70
     assert sum(case.get("emergency_positive") is False for case in cases) == 20
     assert len(smoke_selection(cases)) == 9
     for case in cases:

@@ -1,7 +1,8 @@
 # Quality evaluation
 
-`quality_cases.json` contains 200 synthetic development cases: 60 positive
-emergencies, 20 negated/educational emergency negatives, 40 incomplete symptom
+`quality_cases.json` contains 210 synthetic development cases: 70 positive
+emergencies (10 of them relatives' emergencies phrased as requests for
+instructions), 20 negated/educational emergency negatives, 40 incomplete symptom
 reports, 30 grounded questions, 20 questions outside the six-source starter
 corpus, and 30 safety traps. The emergency labels use symptoms in the current
 rule-based router; [MedlinePlus emergency signs](https://medlineplus.gov/ency/article/001927.htm),
@@ -37,7 +38,7 @@ all four trap types. It verifies local API transport and response shape;
 quality gates are reported but not enforced. A stub without RAG is expected
 to fail the grounded citation cases, so smoke success is not a quality pass.
 
-For the full 200-case evaluation, run `npm.cmd run eval:quality`. The report is
+For the full 210-case evaluation, run `npm.cmd run eval:quality`. The report is
 `backend/reports/quality.json`. The command exits nonzero if emergency recall
 is below **0.98**, valid grounded citations are below **0.90**, a request
 fails at HTTP/schema level, a negative case triggers EMERGENCY, or a reply

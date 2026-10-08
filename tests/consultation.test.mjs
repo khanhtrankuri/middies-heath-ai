@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { localEmergency, safeSourceUrl } from "../app/consultation.ts";
+import { localEmergency, localEmergencyKind, safeSourceUrl } from "../app/consultation.ts";
 
 const safetyCases = JSON.parse(readFileSync(new URL("../backend/evals/safety_cases.json", import.meta.url), "utf8"));
 test("offline safety matches shared Vietnamese and English regression cases", () => {
@@ -28,4 +28,11 @@ test("citation links permit only absolute HTTP(S) destinations without credentia
   for (const url of [null, "javascript:alert(1)", "data:text/html,test", "file:///etc/passwd", "/relative", "https://user:password@example.org/"]) {
     assert.equal(safeSourceUrl(url), null);
   }
+});
+
+test("offline detector separates self-harm from medical emergencies", () => {
+  assert.equal(localEmergencyKind("Tôi không muốn sống nữa"), "self_harm");
+  assert.equal(localEmergencyKind("toi muon tu tu"), "self_harm");
+  assert.equal(localEmergencyKind("Mẹ đang khó thở, cho tôi biết phải làm gì"), "medical");
+  assert.equal(localEmergencyKind("Tôi đau bụng từ từ tăng dần"), null);
 });

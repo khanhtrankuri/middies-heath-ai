@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app.inference import InferenceManager
 from app.models import ConsultationResponse
-from app.triage import DISCLAIMER, find_red_flags
+from app.triage import DISCLAIMER, emergency_reply, find_red_flags
 
 from .prompt_boundary import INPUT_POLICY, inference_messages
 from .rag.citations import build_citations, cited_source_ids, format_grounding_context, remove_unknown_citations
@@ -98,11 +98,7 @@ class ConsultationOrchestrator:
                 "MEDDIES_EMERGENCY_PHONE", os.getenv("EMERGENCY_PHONE", "115")
             )
             return ConsultationResponse(
-                reply=(
-                    "Mô tả có dấu hiệu có thể cần đánh giá khẩn cấp: "
-                    f"{', '.join(red_flags)}. Nếu bạn ở {country}, hãy gọi {phone} hoặc đến "
-                    "cơ sở cấp cứu gần nhất ngay; không chờ tư vấn trực tuyến."
-                ),
+                reply=emergency_reply(red_flags, country, phone),
                 provider="safety-router",
                 action="EMERGENCY",
                 grounding_status="not_used",

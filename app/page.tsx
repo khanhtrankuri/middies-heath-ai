@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { ConsultationResponse, consultationError, localEmergency, MAX_HISTORY_MESSAGES, MAX_MESSAGE_LENGTH, safeSourceUrl } from "./consultation";
+import { ConsultationResponse, consultationError, localEmergencyKind, MAX_HISTORY_MESSAGES, MAX_MESSAGE_LENGTH, safeSourceUrl } from "./consultation";
 
 type Message = { id: number; role: "assistant" | "user"; text: string; failed?: boolean; result?: ConsultationResponse };
 type ReadyResponse = { api: boolean; model: boolean; rag: boolean };
@@ -121,8 +121,11 @@ export default function Home() {
     setInput("");
 
     // Luôn cảnh báo ngay tại trình duyệt, kể cả khi backend không kết nối được.
-    if (localEmergency(clean)) {
-      addExchange(clean, "Triệu chứng bạn mô tả có thể cần được đánh giá khẩn cấp. Hãy gọi 115 hoặc đến cơ sở cấp cứu gần nhất ngay; không nên chờ tư vấn trực tuyến.");
+    const emergencyKind = localEmergencyKind(clean);
+    if (emergencyKind) {
+      addExchange(clean, emergencyKind === "self_harm"
+        ? "Cảm ơn bạn đã chia sẻ điều này. Bạn không phải đối mặt với cảm giác này một mình. Nếu bạn đang nghĩ đến việc làm hại bản thân hoặc không chắc mình an toàn lúc này, hãy gọi 115 hoặc đến cơ sở cấp cứu gần nhất ngay. Hãy liên hệ một người bạn tin tưởng và nhờ họ ở cạnh bạn."
+        : "Triệu chứng bạn mô tả có thể cần được đánh giá khẩn cấp. Hãy gọi 115 hoặc đến cơ sở cấp cứu gần nhất ngay; không nên chờ tư vấn trực tuyến.");
       setUrgent(true);
       setResult(null);
       setStage("result");

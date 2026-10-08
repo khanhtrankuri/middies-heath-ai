@@ -46,3 +46,24 @@ def test_nausea_is_not_vomiting():
     assert state.associated_symptoms == ["buồn nôn"]
     state = patient_state_from_messages([{"role": "user", "content": "Tôi buồn nôn và đã nôn"}])
     assert state.associated_symptoms == ["buồn nôn", "nôn"]
+
+
+def _respond(text):
+    return asyncio.run(ConsultationOrchestrator(None, None, "unavailable").respond([{"role": "user", "content": text}]))
+
+
+def test_self_harm_gets_supportive_reply_with_configured_crisis_line(monkeypatch):
+    monkeypatch.setenv("MEDDIES_CRISIS_LINE", "đường dây hỗ trợ thử nghiệm 0000")
+    response = _respond("Tôi không muốn sống nữa")
+    assert response.action == "EMERGENCY"
+    assert "không phải đối mặt" in response.reply
+    assert "115" in response.reply and "0000" in response.reply
+    assert "Mô tả có dấu hiệu" not in response.reply
+
+
+def test_self_harm_without_crisis_line_still_routes_to_emergency_number(monkeypatch):
+    monkeypatch.delenv("MEDDIES_CRISIS_LINE", raising=False)
+    response = _respond("Tôi uống cả vỉ thuốc ngủ vì muốn tự tử")
+    assert "115" in response.reply
+    assert "không phải đối mặt" in response.reply
+    assert "ngộ độc hoặc quá liều" in response.reply
