@@ -1,0 +1,8 @@
+{
+  "name": "Middies Health AI",
+  "description": "Hệ thống trợ lý y tế thông minh hỗ trợ phân tích triệu chứng khẩn cấp, đọc đơn thuốc & xét nghiệm qua ảnh, kiểm tra tương tác thuốc và quản lý hồ sơ sức khỏe cá nhân.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
