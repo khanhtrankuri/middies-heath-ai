@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UserCheck,
   Plus,
@@ -10,7 +10,7 @@ import {
   Upload,
   RotateCcw,
   AlertTriangle,
-  Clock,
+  Search,
 } from 'lucide-react';
 import {
   MedicationReminder,
@@ -19,6 +19,10 @@ import {
   VitalLog,
 } from '../types/health';
 import { getTodayDateString } from '../data/defaultHealthData';
+import {
+  CatalogMedicationItem,
+  searchMedicationCatalog,
+} from '../data/medicationCatalog';
 
 interface HealthProfileViewProps {
   profile: PatientProfile;
@@ -40,12 +44,42 @@ export const HealthProfileView: React.FC<HealthProfileViewProps> = ({
   const [newAllergy, setNewAllergy] = useState('');
   const [newCondition, setNewCondition] = useState('');
 
-  // New Medication Form State
+  // New Medication Form State with Autocomplete
   const [medName, setMedName] = useState('');
   const [medDosage, setMedDosage] = useState('1 viên');
   const [medInstructions, setMedInstructions] = useState('Uống sau ăn');
   const [medPurpose, setMedPurpose] = useState('');
   const [medSlots, setMedSlots] = useState<MedicationSlot[]>(['Sáng']);
+  const [isMedSuggestOpen, setIsMedSuggestOpen] = useState(false);
+
+  const medSearchRef = useRef<HTMLDivElement | null>(null);
+
+  const medCatalogSuggestions = searchMedicationCatalog(medName, 'Tất cả').slice(
+    0,
+    6
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        medSearchRef.current &&
+        !medSearchRef.current.contains(e.target as Node)
+      ) {
+        setIsMedSuggestOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handlePickCatalogMedForSchedule = (item: CatalogMedicationItem) => {
+    setMedName(item.displayName);
+    setMedDosage(item.defaultDosage);
+    setMedInstructions(item.defaultInstructions);
+    setMedPurpose(item.defaultPurpose);
+    setMedSlots(item.defaultSlots);
+    setIsMedSuggestOpen(false);
+  };
 
   // New Vital Log State
   const [sysInput, setSysInput] = useState('122');
@@ -259,7 +293,7 @@ export const HealthProfileView: React.FC<HealthProfileViewProps> = ({
           )}
         </div>
 
-        {/* Add New Medication Reminder Form */}
+        {/* Add New Medication Reminder Form with Quick Autocomplete */}
         <form
           onSubmit={handleAddMedication}
           className="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-6 space-y-4"
@@ -269,23 +303,69 @@ export const HealthProfileView: React.FC<HealthProfileViewProps> = ({
               Thêm Thuốc Vào Lịch Nhắc Hàng Ngày
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Thuốc thêm tại đây cũng sẽ được AI tự động kiểm tra tương tác khi bạn hỏi bệnh.
+              Tìm chọn tên thuốc gợi ý để tự động điền liều dùng, giờ uống và công dụng chuẩn y khoa.
             </p>
           </div>
 
           <div className="space-y-3 text-xs">
-            <div>
+            <div ref={medSearchRef} className="relative">
               <label className="font-semibold text-slate-700 block mb-1">
-                Tên thuốc & Hàm lượng *
+                Tên thuốc & Hàm lượng (Gõ để tìm nhanh) *
               </label>
-              <input
-                type="text"
-                required
-                value={medName}
-                onChange={(e) => setMedName(e.target.value)}
-                placeholder="VD: Amlodipine 5mg hoặc Vitamin D3 1000IU"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-teal-600 focus:outline-none"
-              />
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  required
+                  value={medName}
+                  onFocus={() => setIsMedSuggestOpen(true)}
+                  onChange={(e) => {
+                    setMedName(e.target.value);
+                    setIsMedSuggestOpen(true);
+                  }}
+                  placeholder="Tìm thuốc (VD: Panadol, Amlodipine, Nexium, Vitamin D3)..."
+                  className="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-slate-900 focus:border-teal-600 focus:outline-none"
+                />
+              </div>
+
+              {isMedSuggestOpen && medCatalogSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-14 z-20 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                  <div className="border-b border-slate-100 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 flex items-center justify-between">
+                    <span>Chọn thuốc để tự động điền hướng dẫn uống:</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsMedSuggestOpen(false)}
+                      className="text-slate-400 hover:text-slate-700"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                  <div className="max-h-52 overflow-y-auto divide-y divide-slate-100">
+                    {medCatalogSuggestions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handlePickCatalogMedForSchedule(item)}
+                        className="w-full text-left px-3 py-2 hover:bg-teal-50/70 transition-colors flex items-start justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 truncate">
+                            {item.displayName}
+                          </p>
+                          <p className="text-slate-500 truncate mt-0.5">
+                            <span>{item.defaultInstructions}</span>
+                            <span aria-hidden="true"> · </span>
+                            <span>Buổi: {item.defaultSlots.join(', ')}</span>
+                          </p>
+                        </div>
+                        <span className="text-teal-700 font-semibold whitespace-nowrap shrink-0">
+                          Điền tự động
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

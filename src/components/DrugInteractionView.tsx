@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Pill,
   Plus,
@@ -8,9 +8,13 @@ import {
   AlertOctagon,
   Search,
   Sparkles,
-  CheckCircle2,
 } from 'lucide-react';
 import { DrugInteractionResult, PatientProfile } from '../types/health';
+import {
+  CatalogMedicationItem,
+  MEDICATION_CATEGORIES,
+  searchMedicationCatalog,
+} from '../data/medicationCatalog';
 
 interface DrugInteractionViewProps {
   patientProfile: PatientProfile;
@@ -100,6 +104,10 @@ export const DrugInteractionView: React.FC<DrugInteractionViewProps> = ({
     'Esomeprazole 20mg',
   ]);
   const [newDrugInput, setNewDrugInput] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
+
   const [questionInput, setQuestionInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -107,13 +115,53 @@ export const DrugInteractionView: React.FC<DrugInteractionViewProps> = ({
     INITIAL_INTERACTION_RESULT
   );
 
-  const handleAddDrug = () => {
-    const trimmed = newDrugInput.trim();
-    if (!trimmed) return;
-    if (!drugList.includes(trimmed)) {
-      setDrugList((prev) => [...prev, trimmed]);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Live filtered suggestions from our clinical catalog
+  const matchedSuggestions = searchMedicationCatalog(
+    newDrugInput,
+    selectedCategory,
+    drugList
+  );
+
+  // Quick 1-click suggestion chips filtered by selected category
+  const quickPickSuggestions = searchMedicationCatalog(
+    '',
+    selectedCategory,
+    drugList
+  ).slice(0, 6);
+
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [newDrugInput, selectedCategory]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleAddDrug = (customDrugName?: string) => {
+    const targetName = (
+      customDrugName !== undefined ? customDrugName : newDrugInput
+    ).trim();
+    if (!targetName) return;
+    if (!drugList.includes(targetName)) {
+      setDrugList((prev) => [...prev, targetName]);
     }
     setNewDrugInput('');
+    setIsDropdownOpen(false);
+  };
+
+  const handleSelectCatalogItem = (item: CatalogMedicationItem) => {
+    handleAddDrug(item.displayName);
   };
 
   const handleRemoveDrug = (drugToRemove: string) => {
@@ -186,7 +234,7 @@ export const DrugInteractionView: React.FC<DrugInteractionViewProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      {/* Left Column: Drug List Builder & Presets */}
+      {/* Left Column: Drug List Builder, Quick Search & Presets */}
       <div className="lg:col-span-5 space-y-5">
         <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
           <div>
@@ -198,29 +246,201 @@ export const DrugInteractionView: React.FC<DrugInteractionViewProps> = ({
             </p>
           </div>
 
-          {/* Add Medication Input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newDrugInput}
-              onChange={(e) => setNewDrugInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddDrug();
-                }
-              }}
-              placeholder="Nhập tên thuốc hoặc hoạt chất (VD: Paracetamol 500mg)..."
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={handleAddDrug}
-              className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Thêm thuốc</span>
-            </button>
+          {/* Search Input with Live Autocomplete Dropdown */}
+          <div ref={searchContainerRef} className="relative space-y-2.5">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={newDrugInput}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onChange={(e) => {
+                    setNewDrugInput(e.target.value);
+                    setIsDropdownOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setIsDropdownOpen(true);
+                      setHighlightedIndex((prev) =>
+                        matchedSuggestions.length > 0
+                          ? (prev + 1) % Math.min(matchedSuggestions.length, 8)
+                          : 0
+                      );
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setIsDropdownOpen(true);
+                      setHighlightedIndex((prev) =>
+                        matchedSuggestions.length > 0
+                          ? (prev - 1 + Math.min(matchedSuggestions.length, 8)) %
+                            Math.min(matchedSuggestions.length, 8)
+                          : 0
+                      );
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (
+                        isDropdownOpen &&
+                        matchedSuggestions[highlightedIndex] &&
+                        newDrugInput.trim()
+                      ) {
+                        handleSelectCatalogItem(
+                          matchedSuggestions[highlightedIndex]
+                        );
+                      } else {
+                        handleAddDrug();
+                      }
+                    } else if (e.key === 'Escape') {
+                      setIsDropdownOpen(false);
+                    }
+                  }}
+                  placeholder="Tìm tên thuốc, biệt dược hoặc công dụng (VD: Panadol, dạ dày)..."
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none"
+                />
+                {newDrugInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewDrugInput('');
+                      setIsDropdownOpen(true);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-700"
+                    aria-label="Xóa từ khóa tìm kiếm"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleAddDrug()}
+                className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Thêm thuốc</span>
+              </button>
+            </div>
+
+            {/* Autocomplete Suggestions Popover */}
+            {isDropdownOpen && (
+              <div className="absolute left-0 right-0 top-10 z-20 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-3.5 py-2 text-xs">
+                  <span className="font-semibold text-slate-700">
+                    {newDrugInput.trim()
+                      ? `Gợi ý thuốc khớp với "${newDrugInput}" (${matchedSuggestions.length})`
+                      : `Danh mục thuốc phổ biến (${selectedCategory})`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="text-slate-400 hover:text-slate-700"
+                  >
+                    Đóng
+                  </button>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
+                  {matchedSuggestions.slice(0, 8).map((item, idx) => {
+                    const isHighlighted = idx === highlightedIndex;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onMouseEnter={() => setHighlightedIndex(idx)}
+                        onClick={() => handleSelectCatalogItem(item)}
+                        className={`w-full text-left px-3.5 py-2.5 transition-colors flex items-start justify-between gap-3 ${
+                          isHighlighted ? 'bg-teal-50/70' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {item.displayName}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            <span>{item.category}</span>
+                            <span aria-hidden="true"> · </span>
+                            <span>{item.defaultPurpose}</span>
+                          </p>
+                          {item.cautionNote && (
+                            <p className="text-xs font-medium text-amber-700 truncate">
+                              {item.cautionNote}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-teal-700 whitespace-nowrap shrink-0 mt-0.5">
+                          + Chọn
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {newDrugInput.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => handleAddDrug(newDrugInput.trim())}
+                      className="w-full text-left px-3.5 py-2.5 bg-slate-50/80 hover:bg-teal-50/60 transition-colors flex items-center justify-between text-xs"
+                    >
+                      <span className="font-medium text-slate-800">
+                        Thêm trực tiếp tên thuốc:{' '}
+                        <strong className="text-teal-800">
+                          "{newDrugInput.trim()}"
+                        </strong>
+                      </span>
+                      <span className="font-semibold text-teal-700 whitespace-nowrap">
+                        + Thêm mới
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Category Filter & 1-Click Drug Suggestion Bar */}
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-700">
+                  Đề xuất tên thuốc nhanh theo nhóm bệnh:
+                </span>
+              </div>
+
+              {/* Category Filter Tabs */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                {MEDICATION_CATEGORIES.map((cat) => {
+                  const active = selectedCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                        active
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick-Add Medication Buttons */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {quickPickSuggestions.map((med) => (
+                  <button
+                    key={med.id}
+                    type="button"
+                    onClick={() => handleSelectCatalogItem(med)}
+                    title={`${med.activeIngredient} — ${med.defaultPurpose}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-teal-600 hover:bg-teal-50/50 hover:text-teal-900 transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <Plus className="h-3 w-3 text-teal-600 shrink-0" />
+                    <span>{med.displayName.split(' (')[0]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Quick Sync from Patient Profile */}
@@ -256,7 +476,7 @@ export const DrugInteractionView: React.FC<DrugInteractionViewProps> = ({
 
             {drugList.length === 0 ? (
               <div className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
-                Chưa có thuốc nào trong danh sách. Hãy nhập tên thuốc ở trên hoặc bấm nạp từ Hồ sơ.
+                Chưa có thuốc nào trong danh sách. Hãy tìm kiếm tên thuốc ở trên hoặc bấm chọn thuốc đề xuất nhanh.
               </div>
             ) : (
               <div className="space-y-1.5">
