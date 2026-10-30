@@ -16,7 +16,7 @@ const initialMessage: Message = {
 };
 
 function Sources({ result }: { result: ConsultationResponse }) {
-  if (result.action === "ASK_MORE" || result.action === "EMERGENCY") return null;
+  if (result.action === "ASK_MORE" || result.action === "EMERGENCY" || result.action === "OUT_OF_SCOPE") return null;
   return <div className="result-card source-panel">
     <div className="result-heading"><span>NGUỒN THAM KHẢO</span><em>{result.grounding_status === "grounded" ? "Có trích dẫn" : "Chưa kiểm chứng"}</em></div>
     <h2>Nguồn cho câu trả lời này</h2>
