@@ -1,0 +1,59 @@
+{
+  "documents": [
+    {
+      "source_id": "nhs-migraine",
+      "title": "Migraine — tóm lược tiếng Việt từ NHS",
+      "organization": "NHS",
+      "source_url": "https://www.nhs.uk/conditions/migraine/",
+      "language": "vi",
+      "jurisdiction": "GB",
+      "text": "Migraine (đau nửa đầu) có thể gây đau theo nhịp, thường ở một bên đầu, buồn nôn hoặc nôn, nhạy cảm với ánh sáng và âm thanh. Một số người có dấu hiệu báo trước như nhìn thấy ánh chớp hoặc đường ngoằn ngoèo. Nên đi khám khi các cơn nặng lên, kéo dài hơn thường lệ hoặc khó kiểm soát. Giấc ngủ đều đặn, ăn đúng bữa, uống đủ nước và ghi nhật ký cơn đau có thể hỗ trợ quản lý triệu chứng. Đây là thông tin chung, không đủ để kết luận một người mắc migraine."
+    },
+    {
+      "source_id": "nhs-headaches",
+      "title": "Headaches — tóm lược tiếng Việt từ NHS",
+      "organization": "NHS",
+      "source_url": "https://www.nhs.uk/symptoms/headaches/",
+      "language": "vi",
+      "jurisdiction": "GB",
+      "text": "Đau đầu có nhiều nguyên nhân, gồm căng thẳng, thiếu nước, bỏ bữa hoặc bệnh hô hấp. Cần đi khám nếu đau tái diễn, không cải thiện hoặc nặng dần. Đau đầu khởi phát đột ngột và cực kỳ dữ dội, hoặc kèm co giật, yếu hay tê người, khó nói, lú lẫn, mất thị lực là những tình huống cần cấp cứu. Không tự lái xe khi cần cấp cứu. Việc thiếu các dấu hiệu này không xác nhận rằng đau đầu là lành tính."
+    },
+    {
+      "source_id": "cdc-respiratory",
+      "title": "About Respiratory Illnesses — tóm lược tiếng Việt từ CDC",
+      "organization": "CDC",
+      "source_url": "https://www.cdc.gov/respiratory-viruses/about/index.html",
+      "publication_date": "2024-07-17",
+      "language": "vi",
+      "jurisdiction": "US",
+      "text": "Virus đường hô hấp có thể gây ho, đau họng, sổ hoặc nghẹt mũi; ngoài ra có thể có sốt, mệt mỏi và đau cơ. Người cao tuổi, trẻ nhỏ, người mang thai và người có bệnh nền có nguy cơ bệnh nặng cao hơn. Rửa tay và cải thiện thông khí giúp phòng ngừa lây nhiễm. Người có nguy cơ cao nên liên hệ nhân viên y tế sớm khi bị bệnh. Khó thở, đau hoặc tức ngực kéo dài, lú lẫn hoặc co giật là các dấu hiệu cảnh báo cần trợ giúp y tế ngay."
+    },
+    {
+      "source_id": "nhs-stroke",
+      "title": "Symptoms of a stroke — tóm lược tiếng Việt từ NHS",
+      "organization": "NHS",
+      "source_url": "https://www.nhs.uk/conditions/stroke/symptoms/",
+      "language": "vi",
+      "jurisdiction": "GB",
+      "text": "Dấu hiệu đột quỵ thường xuất hiện đột ngột: mặt lệch hoặc yếu một bên, không nâng giữ được hai tay vì yếu hoặc tê một tay, nói ngọng hoặc khó nói. Có thể có yếu một bên cơ thể hoặc thay đổi thị lực. Cần gọi cấp cứu ngay khi nghi ngờ đột quỵ, kể cả khi dấu hiệu vừa xuất hiện rồi tự hết. Không tự lái xe đi cấp cứu. Số điện thoại cấp cứu trong tài liệu NHS áp dụng tại Anh; hệ thống phải dùng số cấp cứu của quốc gia người dùng."
+    },
+    {
+      "source_id": "nhs-breathlessness",
+      "title": "Shortness of breath — tóm lược tiếng Việt từ NHS",
+      "organization": "NHS",
+      "source_url": "https://www.nhs.uk/symptoms/shortness-of-breath/",
+      "language": "vi",
+      "jurisdiction": "GB",
+      "text": "Khó thở có nhiều nguyên nhân và không nên tự chẩn đoán. Cần cấp cứu khi khó thở nghiêm trọng, thở hổn hển, nghẹt thở, không nói được thành lời, ngực nặng hoặc bó chặt, môi chuyển xanh hoặc xám, hay đột ngột lú lẫn. Khó thở tăng khi sinh hoạt bình thường hoặc khi nằm cần được nhân viên y tế đánh giá. Không tự lái xe khi có tình trạng cấp cứu."
+    },
+    {
+      "source_id": "nhs-diarrhoea",
+      "title": "Diarrhoea and vomiting — tóm lược tiếng Việt từ NHS",
+      "organization": "NHS",
+      "source_url": "https://www.nhs.uk/symptoms/diarrhoea-and-vomiting/",
+      "language": "vi",
+      "jurisdiction": "GB",
+      "text": "Tiêu chảy và nôn thường gặp khi nhiễm trùng đường tiêu hóa. Uống đủ dịch, từng ngụm nhỏ nếu buồn nôn, giúp hạn chế mất nước. Cần được đánh giá y tế khi nôn liên tục không giữ được nước, đi ngoài ra máu hoặc có dấu hiệu mất nước. Nôn ra máu, đau bụng đột ngột dữ dội, khó thở nghiêm trọng hoặc lú lẫn cần cấp cứu. Trẻ nhỏ, người lớn tuổi và người có bệnh nền cần được chú ý vì nguy cơ mất nước."
+    }
+  ]
+}

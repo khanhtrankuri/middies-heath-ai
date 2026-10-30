@@ -1,0 +1,60 @@
+model:
+  name: Qwen/Qwen3-1.7B
+  dtype: bfloat16
+  attention_implementation: auto
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+
+data:
+  processed_dir: data/processed
+
+dataset_mix:
+  vietnamese: 0.45
+  english: 0.20
+  RandomQA: 0.35
+
+training:
+  max_seq_length: 1536
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 2
+  learning_rate: 1.0e-4
+  num_train_epochs: 1
+  bf16: true
+  fp16: false
+  gradient_checkpointing: false
+  packing: true
+  optim: adamw_torch_fused
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  dataloader_num_workers: 4
+  logging_steps: 10
+  eval_strategy: steps
+  eval_steps: 500
+  save_strategy: steps
+  save_steps: 500
+  save_total_limit: 2
+  seed: 42
+
+output:
+  dir: models/stage1_consult
+
+rag:
+  dense_model: BAAI/bge-m3
+  reranker_model: BAAI/bge-reranker-v2-m3
+  dense_top_k: 30
+  sparse_top_k: 30
+  fusion_top_k: 20
+  final_k: 4
+  embedding_device: cpu
+  reranker_device: cpu
