@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -62,10 +62,18 @@ class ConsultationRequest(BaseModel):
 class ConsultationResponse(BaseModel):
     reply: str
     provider: str
-    action: Literal["ASK_MORE", "FINALIZE", "GROUNDED_ANSWER", "EMERGENCY"] = "FINALIZE"
+    action: Literal["ASK_MORE", "FINALIZE", "GROUNDED_ANSWER", "EMERGENCY", "OUT_OF_SCOPE"] = "FINALIZE"
     grounding_status: Literal["grounded", "degraded", "not_used"] = "not_used"
     citations: list[Citation] = Field(default_factory=list)
+    # Legacy summary kept for existing clients; `dialogue_state` is the full state.
     patient_state: dict[str, object] = Field(default_factory=dict)
+    dialogue_state: dict[str, Any] = Field(default_factory=dict)
+    missing_information: list[str] = Field(default_factory=list)
+    next_question: dict[str, Any] | None = None
+    question_source: Literal["model", "template"] | None = None
+    assessment: dict[str, Any] | None = None
+    emergency_flags: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
     disclaimer: str = ""
 
 
