@@ -198,10 +198,23 @@ def _first_value(text: str, patterns: tuple[str, ...], turn: int) -> SlotValue |
     return SlotValue(value=_span(text, matches[0]), turn=turn) if matches else None
 
 
+def _statements(text: str) -> str:
+    """Drop the patient's own questions ("Có phải tôi bị bệnh tim không?").
+
+    Sentences are blanked rather than removed so spans stay aligned.
+    """
+    folded = fold_aligned(text)
+    chars = list(text)
+    for match in re.finditer(r"[^.!?\n]*(?:\?|co phai|co the la|lieu co)[^.!?\n]*[.!?]?", folded):
+        chars[match.start() : match.end()] = " " * (match.end() - match.start())
+    return "".join(chars)
+
+
 def _list_values(text: str, terms: tuple[str, ...], none: tuple[str, ...], turn: int) -> list[SlotValue]:
     if _any_match(text, none):
         return [SlotValue(value=NONE_VALUE, turn=turn)]
-    return [SlotValue(value=_span(text, match), turn=turn) for match in _affirmed_matches(text, terms)]
+    reported = _statements(text)
+    return [SlotValue(value=_span(text, match), turn=turn) for match in _affirmed_matches(reported, terms)]
 
 
 def _requests_assessment(text: str) -> bool:

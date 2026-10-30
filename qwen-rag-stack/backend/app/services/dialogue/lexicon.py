@@ -188,10 +188,13 @@ SLOT_LABELS: dict[str, str] = {
 DURATION_PATTERNS = (
     r"(?:khoang |duoc |keo dai |duoi |tren |gan |hon |ca )?\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+)?\s*(?:phut|tieng|gio|ngay|tuan|thang|nam|minutes?|hours?|days?|weeks?|months?|years?)(?: nay| roi| qua| truoc)?",
     r"(?:mot|hai|ba|bon|nam|vai|may|muoi) (?:hom|ngay|tuan|thang|nam|bua)(?: nay| roi| qua)?",
-    r"(?:tu )?(?:hom qua|hom kia|sang nay|chieu nay|toi qua|dem qua|toi hom qua|sang hom qua|trua nay|chieu qua|hom nay|tuan truoc|thang truoc|nam ngoai|tuan nay)",
+    r"(?:tu )?(?:hom qua|hom kia|sang nay|chieu nay|toi qua|dem qua|toi hom qua|sang hom qua|trua nay|chieu qua|tuan truoc|thang truoc|nam ngoai)",
+    # A bare "hôm nay" is usually the visit ("hôm nay em đến khám"), not onset.
+    r"tu (?:hom nay|tuan nay)|(?:bi|bat dau|xuat hien) (?:tu )?hom nay",
     r"(?:may|vai|mot vai) hom(?: nay)?",
     r"(?:moi|vua) (?:bi|bat dau|xuat hien)",
-    r"lau roi|lau nay|dot ngot|bat ngo|tu nhien bi|ke tu (?:khi|luc)\s\w+",
+    # "Đột ngột" describes how symptoms began (feature onset:sudden), not when.
+    r"lau roi|lau nay|ke tu (?:khi|luc)\s\w+",
     r"today|yesterday|since (?:this morning|last night)",
 )
 AGE_PATTERN = r"\d{1,3}\s*(?:(?:thang|nam)\s*)?(?:tuoi|years? old|months? old)"

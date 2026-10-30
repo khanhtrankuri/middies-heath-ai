@@ -14,6 +14,9 @@ Backends:
   planner    the deterministic question planner (rule-based baseline)
   reference  the synthetic dataset doctor turn (metric sanity check only)
 
+Rescore finished runs with the current metric code (no generation):
+  python -m evals.benchmark_dialogue --rescore reports/benchmark/E1_base reports/benchmark/E2_pilot_lora
+
 Example:
   python -m evals.benchmark_dialogue --backend hf --model Qwen/Qwen3-1.7B \
       --run-name E1_base --conversations 100
@@ -178,13 +181,21 @@ def evaluate(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     prompts = [_with_system(item["prefix"]) for item in items]
     replies, latencies = run_generation(generator, prompts, batch_size)
+    behavior_prompts = [_with_system(case["messages"]) for case in behavior_cases]
+    behavior_replies, behavior_latencies = run_generation(generator, behavior_prompts, batch_size) if behavior_cases else ([], [])
+    return score_all(items, replies, latencies, behavior_cases, behavior_replies, behavior_latencies)
+
+
+def score_all(
+    items: list[dict[str, Any]], replies: list[str], latencies: list[float],
+    behavior_cases: list[dict[str, Any]], behavior_replies: list[str], behavior_latencies: list[float],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Score generated replies; shared by fresh runs and --rescore."""
     rows = []
     for item, reply, latency in zip(items, replies, latencies):
         score = score_question_turn(item["prefix"], reply, item["reference"], turn_index=item["turn_index"])
         rows.append({**{k: item[k] for k in ("item_id", "conversation_id", "turn_index")},
                      "response": reply, "latency_seconds": round(latency, 4), **score})
-    behavior_prompts = [_with_system(case["messages"]) for case in behavior_cases]
-    behavior_replies, behavior_latencies = run_generation(generator, behavior_prompts, batch_size) if behavior_cases else ([], [])
     behavior_rows = [
         {"item_id": case["id"], "kind": case["kind"], "response": reply, "latency_seconds": round(latency, 4),
          **score_behavior(case, reply)}
@@ -220,7 +231,47 @@ def evaluate(
     return rows, behavior_rows, metrics
 
 
+def rescore(run_dir: Path) -> dict[str, Any]:
+    """Recompute every metric of a finished run from its saved responses.
+
+    Generation is the expensive step; scoring code may improve afterwards.
+    Rescoring guarantees that all compared runs use identical metric code.
+    """
+    run = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    test_file = Path(run["test_file"])
+    if hashlib.sha256(test_file.read_bytes()).hexdigest() != run["test_file_sha256"]:
+        raise ValueError(f"{test_file} changed since {run_dir.name} was generated; rescoring would be invalid")
+    items = build_items(test_file, conversations=run["conversations_requested"], max_turn=run["max_turn"], seed=run["seed"])
+    saved = [json.loads(line) for line in (run_dir / "predictions.jsonl").read_text(encoding="utf-8").splitlines()]
+    question = {row["item_id"]: row for row in saved if "kind" not in row}
+    behavior = {row["item_id"]: row for row in saved if "kind" in row}
+    if set(question) != {item["item_id"] for item in items}:
+        raise ValueError(f"{run_dir.name}: saved items do not match the rebuilt benchmark items")
+    cases = [case for case in json.loads(DEFAULT_BEHAVIOR.read_text(encoding="utf-8")) if case["id"] in behavior]
+    rows, behavior_rows, metrics = score_all(
+        items, [question[i["item_id"]]["response"] for i in items], [question[i["item_id"]]["latency_seconds"] for i in items],
+        cases, [behavior[c["id"]]["response"] for c in cases], [behavior[c["id"]]["latency_seconds"] for c in cases],
+    )
+    with (run_dir / "predictions.jsonl").open("w", encoding="utf-8", newline="\n") as handle:
+        for row in rows + behavior_rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    run["metrics"] = metrics
+    run["rescored_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    (run_dir / "metrics.json").write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
+    return run
+
+
 def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        import sys
+
+        argv = sys.argv[1:]
+    if argv and argv[0] == "--rescore":
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+        for run_dir in argv[1:]:
+            rescore(Path(run_dir))
+            LOGGER.info("Rescored %s", run_dir)
+        return 0
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=("hf", "planner", "reference"), required=True)
     parser.add_argument("--run-name", required=True)

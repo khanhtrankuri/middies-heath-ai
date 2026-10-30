@@ -158,3 +158,46 @@ def test_profile_dataset_mix_replaces_default_mix():
     assert load_config(CONFIGS / "medical_dialogue_v1_strict.yaml")["dataset_mix"] == {"vietnamese_dialogue_v1_strict": 1.0}
     # Existing hardware profiles list the same subsets as the default and are unchanged.
     assert set(load_config(CONFIGS / "rtx4060_8gb.yaml")["dataset_mix"]) == {"vietnamese", "english", "RandomQA"}
+
+
+@pytest.mark.parametrize(("text", "expected"), [
+    ("Bạn đau ở vị trí nào của bụng?", {"location"}),
+    ("Triệu chứng bắt đầu từ khi nào?", {"timing"}),
+    ("Nếu 0 là không đau và 10 là đau nhất, bạn đau mấy điểm?", {"severity"}),
+    ("Bạn có tiền sử bệnh gì và đang uống thuốc gì không?", {"relevant_history", "medications"}),
+    # Generic wording that the audit found misread as slot questions:
+    ("Anh cảm thấy thế nào về tình trạng này?", set()),
+    ("Em muốn biết nên đi khám ở đâu ạ?", set()),
+    ("Mỗi cơn kéo dài bao lâu?", set()),
+    ("Cơn đau có lan ra sau lưng không?", set()),
+    ("Bé 4 tuổi bị đau bụng trên. Cơn đau có dữ dội không?", set()),
+])
+def test_metric_question_slots_are_high_precision(text, expected):
+    from evals.dialogue_metrics import metric_question_slots
+
+    assert metric_question_slots(text) == expected
+
+
+def test_bare_today_is_not_symptom_onset():
+    from app.services.dialogue import extract_dialogue_state
+
+    visit = extract_dialogue_state([{"role": "user", "content": "Hôm nay em đến khám vì đau bụng dưới"}])
+    assert visit.onset is None
+    onset = extract_dialogue_state([{"role": "user", "content": "Em bị đau bụng từ hôm nay"}])
+    assert onset.onset is not None
+
+
+def test_rescore_reproduces_metrics_from_saved_responses(tmp_path):
+    from evals.benchmark_dialogue import rescore
+
+    test_file = _test_file(tmp_path)
+    out = tmp_path / "bench"
+    benchmark_main(["--backend", "planner", "--run-name", "p", "--test-file", str(test_file),
+                    "--output-dir", str(out), "--conversations", "4"])
+    before = json.loads((out / "p" / "metrics.json").read_text(encoding="utf-8"))["metrics"]
+    after = rescore(out / "p")["metrics"]
+    assert after["question_generation"] == before["question_generation"]
+    assert after["behavior"] == before["behavior"]
+    test_file.write_text(test_file.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        rescore(out / "p")
