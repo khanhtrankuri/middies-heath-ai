@@ -1,5 +1,8 @@
 # Hướng dẫn train và chạy Meddies Health AI
 
+> **Sau hợp nhất (30/10/2026):** Tài liệu này chỉ áp dụng cho ứng dụng **Qwen/RAG độc lập** tại `qwen-rag-stack/`, KHÔNG áp dụng cho ứng dụng Gemini API ở thư mục gốc. Mọi lệnh và đường dẫn tương đối bên dưới được hiểu từ thư mục `qwen-rag-stack/` trừ khi chỉ rõ khác. Bản hướng dẫn phản ánh mã nguồn đã commit, chưa bảo đảm môi trường nào cũng train/chạy thành công; kiểm tra GPU, dependencies và chạy test trước. Xem [README chính](../README.md).
+
+
 Đây là tài liệu vận hành duy nhất của repository. Mọi lệnh bên dưới được chạy từ
 thư mục gốc dự án, trừ khi có ghi `cd backend`. Lệnh viết cho PowerShell; trên
 Linux/WSL thay `npm.cmd` bằng `npm`, dấu xuống dòng `` ` `` bằng `\`.
