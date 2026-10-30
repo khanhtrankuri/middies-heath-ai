@@ -1,5 +1,8 @@
 # Kiểm tra bảo mật và dependency — 2026-10-04
 
+> **Phạm vi tài liệu:** Đây là báo cáo bảo mật/hậu kiểm lịch sử của ứng dụng Qwen/RAG, không phải chứng nhận bảo mật cho toàn repository sau merge. Không suy diễn các kiểm thử được ghi dưới đây đã được chạy lại trên commit hiện tại. [Tổng quan repository](../README.md).
+
+
 ## 1. Cache npm trong Git
 
 Xác nhận 991 file `backend/.sites-runtime/` được theo dõi ở HEAD ban đầu.
