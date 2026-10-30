@@ -1,5 +1,8 @@
 # Middies Health AI — Meddies Consultant evaluation
 
+> **Kiến trúc sau merge:** Pipeline này chỉ đánh giá **Gemini Express tại gốc repository** (`/api/health/chat`). Các script `qwen-rag-stack/backend/evals/` đánh giá một hệ thống Qwen/RAG khác, không tương thích trực tiếp về API/schema. Dataset synthetic không phải nhãn lâm sàng chuẩn và benchmark hiện chưa được chạy trực tiếp trong phiên tích hợp này.
+
+
 This evaluation harness connects the **Meddies/meddies-consultant** Hugging Face dataset to the existing `POST /api/health/chat` endpoint. It does **not** change training or production clinical responses.
 
 ## 1. Setup
