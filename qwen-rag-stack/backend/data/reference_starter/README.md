@@ -1,5 +1,8 @@
 # Kho tham khảo khởi đầu
 
+> **Phạm vi:** Đây là bộ fixture kỹ thuật để thử tính năng retrieval của ứng dụng **Qwen/RAG**, không phải kho tham chiếu được phép dùng để tư vấn lâm sàng. Không áp dụng trực tiếp cho Gemini app ở thư mục gốc.
+
+
 Sáu bản **tóm lược do AI biên soạn**, đối chiếu với các trang NHS/CDC được đọc
 ngày 21/09/2026. URL, tổ chức và phạm vi quốc gia được giữ trong từng bản ghi.
 Không phải bản dịch chính thức; chưa được bác sĩ phê duyệt. Không chứa dữ liệu Meddies.
