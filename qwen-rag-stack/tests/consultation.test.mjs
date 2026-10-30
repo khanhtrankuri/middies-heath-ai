@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { localEmergency, localEmergencyKind, safeSourceUrl } from "../app/consultation.ts";
+import { collectedFacts, localEmergency, localEmergencyKind, safeSourceUrl } from "../app/consultation.ts";
 
 const safetyCases = JSON.parse(readFileSync(new URL("../backend/evals/safety_cases.json", import.meta.url), "utf8"));
 test("offline safety matches shared Vietnamese and English regression cases", () => {
@@ -35,4 +35,18 @@ test("offline detector separates self-harm from medical emergencies", () => {
   assert.equal(localEmergencyKind("toi muon tu tu"), "self_harm");
   assert.equal(localEmergencyKind("Mẹ đang khó thở, cho tôi biết phải làm gì"), "medical");
   assert.equal(localEmergencyKind("Tôi đau bụng từ từ tăng dần"), null);
+});
+
+test("collected facts show only user-reported state, never hypotheses", () => {
+  assert.deepEqual(collectedFacts(undefined), []);
+  const rows = collectedFacts({
+    symptoms: [{ key: "dau_bung", label: "đau bụng", present: true }],
+    negated_symptoms: [{ key: "sot", label: "sốt", present: false }],
+    onset: { value: "từ hôm qua", source: "user_reported", turn: 0 },
+    duration: null,
+    location: { value: "vùng trên rốn", source: "user_answer", turn: 2 },
+    medications: [{ value: "không có (người dùng xác nhận)", source: "user_answer", turn: 4 }],
+  });
+  assert.deepEqual(rows.map((row) => row.label), ["Triệu chứng đã ghi nhận", "Bạn cho biết không có", "Thời gian", "Vị trí", "Thuốc đang dùng"]);
+  assert.equal(rows[2].value, "từ hôm qua");
 });

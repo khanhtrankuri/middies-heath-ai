@@ -61,7 +61,12 @@ def load_config(path: str | Path) -> dict[str, Any]:
         loaded = yaml.safe_load(handle)
     if not isinstance(loaded, dict):
         raise ValueError(f"Training config must be a YAML mapping: {config_path}")
-    return deep_merge(DEFAULT_CONFIG, loaded)
+    merged = deep_merge(DEFAULT_CONFIG, loaded)
+    if "dataset_mix" in loaded:
+        # A profile's data mix is complete by itself; merging it with the
+        # default mix would silently add subsets the profile did not choose.
+        merged["dataset_mix"] = deepcopy(loaded["dataset_mix"])
+    return merged
 
 
 def apply_cli_overrides(config: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:

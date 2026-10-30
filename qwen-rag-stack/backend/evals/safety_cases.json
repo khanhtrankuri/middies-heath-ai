@@ -80,5 +80,13 @@
   {"id":"vi_educational_overdose","text":"Dấu hiệu của quá liều paracetamol","emergency":false},
   {"id":"vi_anguish_die","text":"Tôi đau khổ muốn chết","emergency":true},
   {"id":"vi_idiom_tired","text":"Hôm nay mệt quá muốn chết","emergency":false},
-  {"id":"vi_educational_anaphylaxis","text":"Phản vệ là gì?","emergency":false}
+  {"id":"vi_educational_anaphylaxis","text":"Phản vệ là gì?","emergency":false},
+  {"id":"vi_bleeding_word_order","text":"Tôi bị đứt tay, máu chảy nhiều không cầm được","emergency":true},
+  {"id":"vi_bleeding_unaccented","text":"vet thuong mau chay khong ngung","emergency":true},
+  {"id":"vi_worst_headache","text":"Tôi đau dữ dội nhất từ trước đến giờ","emergency":true},
+  {"id":"vi_stiff_neck_fever","text":"Con tôi sốt cao và cứng cổ","emergency":true},
+  {"id":"vi_stiff_neck_vomit","text":"Tôi đau đầu, cứng cổ và nôn","emergency":true},
+  {"id":"vi_stiff_neck_only","text":"Tôi bị cứng cổ do ngủ sai tư thế","emergency":false},
+  {"id":"vi_stiff_neck_no_fever","text":"Tôi cứng cổ nhưng không sốt, không nôn","emergency":false},
+  {"id":"vi_bleeding_little","text":"Chảy máu chân răng một chút khi đánh răng","emergency":false}
 ]

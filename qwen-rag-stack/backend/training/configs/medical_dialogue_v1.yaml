@@ -1,0 +1,68 @@
+# Experiment E2: Qwen3-1.7B + LoRA on Meddies Vietnamese multi-turn
+# consultations (standard cleaning level). Sized for an 8 GB RTX 4060 laptop
+# GPU; see TRAINING.md for 24 GB overrides. E3 differs ONLY in dataset_mix and
+# output.dir (medical_dialogue_v1_strict.yaml) so the comparison isolates data
+# quality.
+#
+# Prepare data first:  python -m training.data.prepare_dialogue
+experiment:
+  id: E2
+  description: Qwen3-1.7B LoRA on Meddies Vietnamese dialogues (standard cleaning)
+  data_manifest: data/processed/meddies_dialogue_v1_manifest.json
+
+model:
+  name: Qwen/Qwen3-1.7B
+  dtype: bfloat16
+  attention_implementation: sdpa
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  processed_dir: data/processed
+
+dataset_mix:
+  vietnamese_dialogue_v1: 1.0
+
+training:
+  max_seq_length: 2048
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 1.0e-4
+  num_train_epochs: 1
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  # Packing concatenates conversations without attention isolation, so a
+  # sample could attend to an unrelated patient's turns. Disabled for dialogue.
+  packing: false
+  optim: adamw_torch
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  dataloader_num_workers: 0
+  logging_steps: 10
+  eval_strategy: steps
+  eval_steps: 200
+  save_strategy: steps
+  save_steps: 200
+  save_total_limit: 2
+  seed: 42
+
+output:
+  dir: models/E2_medical_dialogue_v1
+
+tracking:
+  enabled: false

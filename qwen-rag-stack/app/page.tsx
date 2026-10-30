@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { ConsultationResponse, consultationError, localEmergencyKind, MAX_HISTORY_MESSAGES, MAX_MESSAGE_LENGTH, safeSourceUrl } from "./consultation";
+import { CARE_LEVEL_LABEL, collectedFacts, ConsultationResponse, consultationError, localEmergencyKind, MAX_HISTORY_MESSAGES, MAX_MESSAGE_LENGTH, safeSourceUrl } from "./consultation";
 
 type Message = { id: number; role: "assistant" | "user"; text: string; failed?: boolean; result?: ConsultationResponse };
 type ReadyResponse = { api: boolean; model: boolean; rag: boolean };
@@ -16,7 +16,7 @@ const initialMessage: Message = {
 };
 
 function Sources({ result }: { result: ConsultationResponse }) {
-  if (result.action === "ASK_MORE" || result.action === "EMERGENCY") return null;
+  if (result.action === "ASK_MORE" || result.action === "EMERGENCY" || result.action === "OUT_OF_SCOPE") return null;
   return <div className="result-card source-panel">
     <div className="result-heading"><span>NGUỒN THAM KHẢO</span><em>{result.grounding_status === "grounded" ? "Có trích dẫn" : "Chưa kiểm chứng"}</em></div>
     <h2>Nguồn cho câu trả lời này</h2>
@@ -30,6 +30,30 @@ function Sources({ result }: { result: ConsultationResponse }) {
       </article>;
     }) : <div className="grounding-warning">Câu trả lời chưa có nguồn tham khảo được xác nhận. Hãy trao đổi với nhân viên y tế để được đánh giá phù hợp.</div>}
     {result.disclaimer && <p className="result-disclaimer">{result.disclaimer}</p>}
+  </div>;
+}
+
+function AssessmentCard({ result }: { result: ConsultationResponse }) {
+  const assessment = result.assessment;
+  if (result.action !== "FINALIZE" || !assessment?.eligible) return null;
+  return <div className="result-card assessment-card">
+    <div className="result-heading"><span>KHẢ NĂNG LIÊN QUAN</span><em>Không phải chẩn đoán</em></div>
+    <h2>Các tình trạng có thể cần cân nhắc</h2>
+    {assessment.candidate_conditions.length ? assessment.candidate_conditions.map((item, index) => (
+      <div className={`condition ${index === 0 ? "primary-condition" : ""}`} key={item.name}>
+        <div>
+          <strong>{item.name}</strong>
+          <small>{item.explanation}</small>
+          {item.supporting_evidence.length > 0 && <small><b>Dựa trên:</b> {item.supporting_evidence.join("; ")}</small>}
+          {item.missing_evidence.length > 0 && <small><b>Chưa xác nhận:</b> {item.missing_evidence.join("; ")}</small>}
+        </div>
+        <span className={`care-${item.care_level}`}>{CARE_LEVEL_LABEL[item.care_level]}</span>
+      </div>
+    )) : <div className="grounding-warning">Chưa đủ căn cứ để gợi ý một tình trạng cụ thể; hệ thống không đoán bệnh khi thiếu thông tin.</div>}
+    <p className="result-disclaimer">{assessment.uncertainty}</p>
+    <div className="recommendation"><strong>Bước tiếp theo</strong><p>{assessment.next_action}</p></div>
+    {assessment.missing_information.length > 0 && <p className="result-disclaimer">Thông tin còn thiếu: {assessment.missing_information.join(", ")}.</p>}
+    <p className="result-disclaimer">{assessment.disclaimer}</p>
   </div>;
 }
 
@@ -89,6 +113,8 @@ export default function Home() {
     duration: result?.patient_state.duration ?? "Đang thu thập",
     severity: result?.patient_state.severity ?? "Chưa ghi nhận",
   };
+  const facts = collectedFacts(result?.dialogue_state);
+  const missing = result?.action === "ASK_MORE" ? result.missing_information ?? [] : [];
   const historyFull = messages.filter((item) => !item.failed).length >= MAX_HISTORY_MESSAGES;
 
   function addExchange(userText: string, assistantText: string) {
@@ -150,6 +176,8 @@ export default function Home() {
       if (data.action === "ASK_MORE") {
         setUrgent(false);
         setStage("followup");
+      } else if (data.action === "OUT_OF_SCOPE") {
+        setUrgent(false);
       } else {
         setUrgent(data.action === "EMERGENCY");
         setStage("result");
@@ -206,10 +234,10 @@ export default function Home() {
           <div className="messages" aria-live="polite">
             {result?.provider === "stub" && <div className="grounding-warning">Chế độ kiểm thử: đang dùng phản hồi mẫu, chưa sử dụng mô hình AI tư vấn thật.</div>}
             <div className="date-divider"><span>HÔM NAY</span></div>
-            {messages.map((message) => <div key={message.id}><div className={`message-row ${message.role} ${message.failed ? "failed" : ""}`}>{message.role === "assistant" && <div className="mini-avatar">M</div>}<div className="message-bubble">{message.text}{message.failed && <small>Chưa gửi thành công</small>}</div></div>{message.result && <Sources result={message.result} />}</div>)}
+            {messages.map((message) => <div key={message.id}><div className={`message-row ${message.role} ${message.failed ? "failed" : ""}`}>{message.role === "assistant" && <div className="mini-avatar">M</div>}<div className="message-bubble">{message.text}{message.failed && <small>Chưa gửi thành công</small>}{message.result?.action === "ASK_MORE" && message.result.next_question?.slot_label && <small className="question-reason">Vì sao hỏi: cần làm rõ {message.result.next_question.slot_label}.</small>}</div></div>{message.result && <AssessmentCard result={message.result} />}{message.result && <Sources result={message.result} />}</div>)}
             {loading && <div className="message-row assistant"><div className="mini-avatar">M</div><div className="message-bubble">Đang tổng hợp thông tin…</div></div>}
 
-            {urgent && <div className="emergency-card" role="alert"><strong>⚠ Cần trợ giúp khẩn cấp</strong><p>Gọi <a href="tel:115"><b>115</b></a> (Việt Nam) hoặc đến khoa Cấp cứu gần nhất. Nếu có thể, hãy nhờ người thân đi cùng.</p></div>}
+            {urgent && <div className="emergency-card" role="alert"><strong>⚠ Cần trợ giúp khẩn cấp</strong><p>Gọi <a href="tel:115"><b>115</b></a> (Việt Nam) hoặc đến khoa Cấp cứu gần nhất. Nếu có thể, hãy nhờ người thân đi cùng.</p>{result?.emergency_flags && result.emergency_flags.length > 0 && <p>Dấu hiệu được ghi nhận: {result.emergency_flags.join(", ")}.</p>}</div>}
 
             {error && <div className="request-error" role="alert"><p>{error}</p>{failedMessage && <button disabled={loading} onClick={() => void submit(failedMessage.text, failedMessage.id)}>Thử gửi lại</button>}</div>}
             {historyFull && <div className="grounding-warning">Phiên tư vấn đã đạt giới hạn. Chọn “Cuộc trò chuyện mới” để tiếp tục.</div>}
@@ -226,8 +254,11 @@ export default function Home() {
         </section>
 
         <aside className="right-panel">
-          <p className="eyebrow">TÓM TẮT HIỆN TẠI</p><div className="summary-card"><div className="summary-item"><span>Mô tả ban đầu</span><strong>{summary.symptom}</strong></div><div className="summary-item"><span>Thời gian</span><strong>{summary.duration}</strong></div><div className="summary-item"><span>Mức độ triệu chứng</span><strong>{summary.severity}</strong></div><div className="summary-item"><span>Dấu hiệu khẩn cấp</span><strong className={urgent ? "urgent-text" : ""}>{urgent ? "Cần xử trí ngay" : result ? "Chưa ghi nhận qua mô tả" : "Chưa được đánh giá"}</strong></div></div>
+          <p className="eyebrow">THÔNG TIN ĐÃ THU THẬP</p><div className="summary-card">{facts.length ? facts.map((fact) => <div className="summary-item" key={fact.label}><span>{fact.label}</span><strong>{fact.value}</strong></div>) : <><div className="summary-item"><span>Mô tả ban đầu</span><strong>{summary.symptom}</strong></div><div className="summary-item"><span>Thời gian</span><strong>{summary.duration}</strong></div><div className="summary-item"><span>Mức độ triệu chứng</span><strong>{summary.severity}</strong></div></>}<div className="summary-item"><span>Dấu hiệu khẩn cấp</span><strong className={urgent ? "urgent-text" : ""}>{urgent ? "Cần xử trí ngay" : result ? "Chưa ghi nhận qua mô tả" : "Chưa được đánh giá"}</strong></div></div>
+          {missing.length > 0 && <div className="missing-card"><h3>Thông tin còn thiếu</h3><ul>{missing.map((item) => <li key={item}>{item}</li>)}</ul></div>}
+          {facts.length > 0 && <p className="provenance-note">Chỉ hiển thị thông tin do bạn cung cấp; khả năng liên quan do hệ thống gợi ý được hiển thị riêng trong khung hội thoại.</p>}
           <div className="red-flags"><h3>Dấu hiệu cần cấp cứu</h3><p>Gọi 115 ngay nếu có:</p><ul><li>Khó thở hoặc đau ngực</li><li>Ngất, co giật</li><li>Yếu liệt hoặc méo miệng</li><li>Chảy máu nhiều</li></ul></div>
+          {result?.limitations && result.limitations.length > 0 && <div className="data-note limitations"><span>ⓘ</span><div><strong>Giới hạn của kết quả</strong><ul>{result.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div></div>}
           <div className="data-note"><span>◇</span><p>Nội dung được gửi đến dịch vụ tư vấn để xử lý. Hội thoại chỉ hiển thị trong phiên này và sẽ mất khi tải lại trang.</p></div>
         </aside>
       </div>
