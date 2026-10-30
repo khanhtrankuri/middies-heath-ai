@@ -151,3 +151,10 @@ def test_dst_evaluation_reports_prf_on_gold_set():
     # Development thresholds guard against regressions, not clinical validity.
     assert report["symptom_extraction_present"]["f1"] >= 0.9
     assert report["state_slot_accuracy"] >= 0.9
+
+
+def test_profile_dataset_mix_replaces_default_mix():
+    assert load_config(CONFIGS / "medical_dialogue_v1.yaml")["dataset_mix"] == {"vietnamese_dialogue_v1": 1.0}
+    assert load_config(CONFIGS / "medical_dialogue_v1_strict.yaml")["dataset_mix"] == {"vietnamese_dialogue_v1_strict": 1.0}
+    # Existing hardware profiles list the same subsets as the default and are unchanged.
+    assert set(load_config(CONFIGS / "rtx4060_8gb.yaml")["dataset_mix"]) == {"vietnamese", "english", "RandomQA"}

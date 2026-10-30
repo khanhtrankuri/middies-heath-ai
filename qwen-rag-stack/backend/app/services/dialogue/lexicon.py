@@ -272,9 +272,9 @@ class QuestionTopic:
 QUESTION_SLOT_CUES: dict[str, tuple[str, ...]] = {
     "timing": (r"bao lau|khi nao|tu luc nao|tu bao gio|bat dau|keo dai|may ngay|bao nhieu ngay|tu hom nao|xuat hien tu|bi (?:duoc )?bao lau|thoi gian",),
     "location": (r"o dau|vi tri|cho nao|vung nao|ben nao|phia nao|cho nao|lan (?:ra|xuong|sang) dau|o vung",),
-    "severity": (r"muc do|bao nhieu diem|may diem|thang (?:diem|0|1|10)|tren 10|/10|10 la|nang (?:khong|lam khong)|bao nhieu do|nhiet do|do (?:duoc )?bao nhieu|sot cao nhat|anh huong (?:den )?(?:sinh hoat|cong viec|giac ngu)",),
+    "severity": (r"muc do|bao nhieu diem|may diem|thang (?:diem|0|1|10)|tren 10|/10|10 la|nang (?:khong|lam khong)|bao nhieu do|nhiet do|do (?:duoc )?bao nhieu|sot cao nhat",),
     "character": (r"nhu the nao|cam giac (?:nhu|ra sao|the nao)|kieu|am i|quan|nhoi|bong rat|nong rat|ho khan hay|co dom|dom mau|tinh chat|mo ta (?:con|cam giac)",),
-    "progression": (r"tang (?:len|dan)|giam (?:di|dan)|thay doi|dien bien|lien tuc|tung con|luc co luc khong|nang hon|do hon|tai phat|lap lai|bao nhieu lan",),
+    "progression": (r"tang (?:len|dan)|giam (?:di|dan)|dien bien|lien tuc|tung con|luc co luc khong|nang hon|do hon|tai phat|lap lai|bao nhieu lan",),
     "triggers": (r"sau (?:khi )?an|khi doi|khi van dong|yeu to|lam (?:cho )?(?:dau|trieu chung) nang|lam giam|do hon khi|nang hon khi|khi nam|tu the|tiep xuc|an gi|an uong",),
     "associated_symptoms": (r"kem theo|di kem|(?<!\w)kem(?!\w)|trieu chung (?:nao )?khac|con (?:bi|thay) gi|co (?:bi |thay )?(?:sot|non|buon non|tieu chay|ho|kho tho|chong mat|met|phat ban|ngua|so mui|dau hong|te|o chua)",),
     "red_flag_screen": (r"kho tho|dau nguc|yeu (?:hoac |hay )?(?:liet|te)|meo mieng|noi kho|ngat|co giat|non ra mau|phan den|cung co|lo mo|li bi|du doi dot ngot|dot ngot du doi|xuat huyet|moi tim|ho ra mau|bung cung|khong chiu noi",),
@@ -286,8 +286,13 @@ QUESTION_SLOT_CUES: dict[str, tuple[str, ...]] = {
 
 
 def split_questions(text: str) -> list[str]:
-    """Split a reply into interrogative sentences (ending with '?')."""
-    pieces = re.split(r"(?<=[?？])\s*|\n+", text)
+    """Split a reply into interrogative sentences (ending with '?').
+
+    Statements that precede a question in the same paragraph ("Bé 4 tuổi bị
+    đau bụng. Cơn đau có dữ dội không?") are separate sentences and must not
+    contribute slot cues to the question.
+    """
+    pieces = re.split(r"(?<=[?？.!…])\s+|\n+|(?<=\d)\.\s", text)
     return [piece.strip() for piece in pieces if piece.strip().endswith(("?", "？"))]
 
 
@@ -299,6 +304,11 @@ def question_topics(text: str) -> QuestionTopic:
         for slot, cues in QUESTION_SLOT_CUES.items():
             if any(re.search(cue, folded) for cue in cues):
                 topic.slots.add(slot)
+        # "Mỗi cơn kéo dài bao lâu?" asks about episode length, not onset.
+        if "timing" in topic.slots and re.search(r"moi (?:lan|con|dot|khi)|tung con", folded) \
+                and not re.search(r"bat dau|tu khi nao|tu bao gio|tu luc nao", folded):
+            topic.slots.discard("timing")
+            topic.slots.add("progression")
         for term in SYMPTOMS:
             if find_term(question, term):
                 topic.symptoms.add(term.key)

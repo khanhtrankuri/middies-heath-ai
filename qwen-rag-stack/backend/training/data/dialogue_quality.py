@@ -44,6 +44,12 @@ ASSISTANT_ROLE_INVERSION = re.compile(
     r"^(?:dạ\s+)?thưa bác sĩ|(?:em|con|cháu|tôi|mình) (?:xin )?cảm ơn bác sĩ|bác sĩ ơi[,!]",
     re.IGNORECASE,
 )
+# Instructions or meta-commentary of the LLM that simulated the patient.
+SIMULATION_ARTIFACT = re.compile(
+    r"\bpersona\b|đóng vai (?:một |là )?(?:bệnh nhân|người bệnh)|tôi đã sẵn sàng (?:để )?(?:bắt đầu|trả lời)"
+    r"|với vai trò (?:là )?(?:bệnh nhân|người bệnh)|\[(?:bệnh nhân|patient|doctor|bác sĩ)\]|as (?:the|a) patient",
+    re.IGNORECASE,
+)
 PLANNING_NOTES = re.compile(
     r"\b(?:Giai đoạn|Phase(?: Check)?|Mục tiêu tiếp theo|Clinical Logic|FIFE|OPQRST|Red Flags?)\b\s*\**\s*:",
     re.IGNORECASE,
@@ -159,6 +165,8 @@ def strict_reasons(messages: list[dict[str, str]]) -> list[str]:
         reasons.append("role_inversion_user")
     if any(item["role"] == "assistant" and ASSISTANT_ROLE_INVERSION.search(item["content"]) for item in messages):
         reasons.append("role_inversion_assistant")
+    if any(SIMULATION_ARTIFACT.search(item["content"]) for item in messages):
+        reasons.append("simulation_artifact")
     assistant = [item["content"] for item in messages if item["role"] == "assistant"]
     if any(PLANNING_NOTES.search(text) for text in assistant):
         reasons.append("leaked_planning_notes")
