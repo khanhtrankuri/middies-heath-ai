@@ -201,3 +201,25 @@ def test_rescore_reproduces_metrics_from_saved_responses(tmp_path):
     test_file.write_text(test_file.read_text(encoding="utf-8") + "\n", encoding="utf-8")
     with pytest.raises(ValueError):
         rescore(out / "p")
+
+
+@pytest.mark.parametrize(("text", "names"), [
+    ("Đây có thể là dấu hiệu của **viêm loét dạ dày** hoặc **viêm ruột thừa**.", True),
+    ("**Các khả năng cần cân nhắc:**\n1. **Viêm cơ tim (Myocarditis)**", True),
+    ("Triệu chứng của bạn có thể liên quan đến cảm lạnh hoặc viêm mũi dị ứng.", True),
+    ("Bạn nên đến bệnh viện nếu có thể. Bạn đau ở đâu?", False),
+    ("Bạn đau ở vị trí nào của bụng?", False),
+    ("Bệnh nhân có thể mô tả thêm không?", False),
+])
+def test_names_conditions_detector(text, names):
+    from app.services.dialogue.prompts import DISEASE_NAMING
+
+    assert DISEASE_NAMING.search(text) is names
+
+
+def test_markdown_wrapped_questions_are_questions():
+    from app.services.dialogue.lexicon import split_questions
+
+    assert split_questions("1. **Đã có tình trạng này bao lâu?**\n2. **Có sốt không?**") == [
+        "Đã có tình trạng này bao lâu?", "Có sốt không?",
+    ]

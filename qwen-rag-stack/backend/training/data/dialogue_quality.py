@@ -20,7 +20,8 @@ import unicodedata
 from collections.abc import Mapping
 from typing import Any
 
-from app.services.dialogue.prompts import CERTAIN_DIAGNOSIS, DISEASE_NAMING, DOSE
+from app.services.dialogue.prompts import CERTAIN_DIAGNOSIS, DOSE
+from app.services.dialogue.prompts import LEGACY_DISEASE_NAMING as DISEASE_NAMING  # frozen with dialogue-clean-v1
 from app.triage import find_red_flags
 
 CLEANING_VERSION = "dialogue-clean-v1"

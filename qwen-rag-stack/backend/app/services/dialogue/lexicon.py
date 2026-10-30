@@ -295,6 +295,7 @@ def split_questions(text: str) -> list[str]:
     đau bụng. Cơn đau có dữ dội không?") are separate sentences and must not
     contribute slot cues to the question.
     """
+    text = re.sub(r"[*_`#]+", "", text)  # "**Đau bao lâu?**" is still a question
     pieces = re.split(r"(?<=[?？.!…])\s+|\n+|(?<=\d)\.\s", text)
     return [piece.strip() for piece in pieces if piece.strip().endswith(("?", "？"))]
 

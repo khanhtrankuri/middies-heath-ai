@@ -30,11 +30,44 @@ DOSE = re.compile(
     r"\d+(?:[.,]\d+)?\s*(?:mg|mcg|µg|ml|viên|giọt|mg/kg|gói)\b|uống\s+\d+\s+(?:lần|viên)|mỗi\s+\d+\s+(?:giờ|tiếng)",
     re.I,
 )
-DISEASE_NAMING = re.compile(
+# Frozen with cleaning_version dialogue-clean-v1; the data filter must keep
+# using it so re-running the pipeline reproduces the published splits.
+LEGACY_DISEASE_NAMING = re.compile(
     r"(?:có thể|khả năng|nghi ngờ|có lẽ|dấu hiệu của|triệu chứng của|nghĩ đến)\s+(?:là\s+|bạn\s+(?:bị|mắc)\s+|bị\s+|mắc\s+)?"
     r"(?:bệnh|viêm|hội chứng|nhiễm|loét|sỏi|suy|ung thư|rối loạn|thoát vị|trào ngược|cúm|sốt xuất huyết|migraine|đau nửa đầu)",
     re.I,
 )
+
+# "Names possible conditions": a hypothesis cue AND a condition noun in the
+# same reply. Markdown is removed first ("dấu hiệu của **viêm dạ dày**").
+HYPOTHESIS_CUE = re.compile(
+    r"khả năng (?:cần cân nhắc|có thể|là|bị|cao)|các khả năng|có thể (?:(?:bạn|em|anh|chị|bác|cháu|con) )?(?:là|bị|mắc|do|liên quan|gặp)|có khả năng"
+    r"|nghi ngờ|có lẽ (?:là|bị)|dấu hiệu (?:của|cho thấy)|nguyên nhân (?:có thể|thường gặp|phổ biến)"
+    r"|chẩn đoán (?:sơ bộ|phân biệt|có thể)|nghĩ (?:nhiều )?đến|phù hợp với|thường gặp (?:trong|ở)"
+    r"|khả năng liên quan|gợi ý (?:liên quan|đến)",
+    re.I,
+)
+CONDITION_NOUN = re.compile(
+    r"\b(?:bệnh(?! (?:nhân|viện|sử|án|nền))|viêm|hội chứng|nhiễm (?:trùng|khuẩn|virus|nấm)|loét|sỏi"
+    r"|suy (?:tim|thận|gan|giáp|hô hấp)|ung thư"
+    r"|khối u|u (?:lành|ác|xơ|nang|tuyến|nguyên)|rối loạn|thoát vị|trào ngược|cúm|cảm lạnh|sốt xuất huyết|migraine"
+    r"|đau nửa đầu|thiếu máu|tắc (?:nghẽn|mạch)|nhồi máu|đột quỵ|lao (?:phổi|hạch)|hen|tiểu đường|đái tháo đường|tăng huyết"
+    r"|gout|gút|zona|herpes|phình|xơ gan|trầm cảm|rối loạn lo âu|thoái hóa|bong gân|gãy xương|dị ứng|mề đay|chàm"
+    r"|myocarditis|hypertension|infection|syndrome|disease|color blindness)",
+    re.I,
+)
+_MARKDOWN = re.compile(r"[*_`#]+")
+
+
+class _NamesConditions:
+    """Regex-like object so existing ``DISEASE_NAMING.search(text)`` calls keep working."""
+
+    def search(self, text: str) -> bool:
+        plain = _MARKDOWN.sub("", text)
+        return bool(HYPOTHESIS_CUE.search(plain) and CONDITION_NOUN.search(plain))
+
+
+DISEASE_NAMING = _NamesConditions()
 
 
 def question_instruction(slot_label: str, template: str) -> str:
