@@ -1,5 +1,8 @@
 # Quy tắc regression cho sàng lọc khẩn cấp
 
+> **Phạm vi sau merge:** Các quy tắc red-flag này áp dụng cho backend/frontend của **Qwen/RAG**. Ứng dụng Gemini API tại thư mục gốc có cơ chế khác và chưa dùng chung rule engine. Các kiểm thử chỉ chứng minh hành vi trong fixture, không chứng nhận mức độ an toàn y khoa.
+
+
 `safety_cases.json` là đặc tả regression dùng chung cho router backend và bộ dò
 offline frontend. Bộ ca này kiểm tra nhận diện ngôn ngữ; nó không phải guideline
 lâm sàng và không chứng minh độ an toàn của hệ thống.
