@@ -1,5 +1,8 @@
 # Medical knowledge corpus
 
+> **Phạm vi sau hợp nhất:** Kho tài liệu này phục vụ **chỉ Qwen/RAG** trong `qwen-rag-stack/`. Không tự động được tải vào ứng dụng Gemini API tại thư mục gốc. Tài liệu y khoa cần kiểm tra xuất xứ và quyền sử dụng trước khi lập chỉ mục.
+
+
 Only place reviewed, redistribution-safe medical references in these folders. Suitable
 sources include WHO, CDC, NIH, NICE, national ministries of health, and locally reviewed
 documents with clear provenance. Meddies/RandomQA training rows are not factual RAG sources.
