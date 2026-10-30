@@ -1,5 +1,8 @@
 # Quality evaluation
 
+> **Phạm vi sau merge:** Bộ kiểm thử và endpoint được nói tới ở đây thuộc **Qwen/RAG FastAPI**, không phải `/api/health/chat` của Gemini Express. Bộ ca là synthetic; không thể suy ra độ nhạy cấp cứu thực tế hoặc chứng nhận an toàn từ điểm số này. [Meddies Gemini evaluation](../../../evaluation/README.md) (đường dẫn từ thư mục `qwen-rag-stack/backend/evals` phải đi lên ba cấp tới gốc).
+
+
 `quality_cases.json` contains 210 synthetic development cases: 70 positive
 emergencies (10 of them relatives' emergencies phrased as requests for
 instructions), 20 negated/educational emergency negatives, 40 incomplete symptom
