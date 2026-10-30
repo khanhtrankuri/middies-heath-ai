@@ -223,3 +223,16 @@ def test_markdown_wrapped_questions_are_questions():
     assert split_questions("1. **Đã có tình trạng này bao lâu?**\n2. **Có sốt không?**") == [
         "Đã có tình trạng này bao lâu?", "Có sốt không?",
     ]
+
+
+def test_error_analysis_counts_categories(tmp_path):
+    from evals.error_analysis import analyse
+
+    test_file = _test_file(tmp_path)
+    out = tmp_path / "bench"
+    benchmark_main(["--backend", "planner", "--run-name", "p", "--test-file", str(test_file),
+                    "--output-dir", str(out), "--conversations", "4"])
+    summary, lines = analyse(out / "p", examples=1)
+    assert summary["items"] == 8
+    assert set(summary["counts"]) <= {"no_question", "names_conditions_early", "over_question_limit", "off_target", "unsafe"}
+    assert lines[0] == "## p"
