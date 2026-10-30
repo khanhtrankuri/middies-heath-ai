@@ -56,6 +56,7 @@ Additional implementation details: [Architecture](ARCHITECTURE.md).
 See the separate application entry point and full instructions:
 
 - [Qwen/RAG README](qwen-rag-stack/README.md)
+- Research track (Vietnamese intelligent history-taking, Qwen base vs LoRA): [architecture](qwen-rag-stack/docs/ARCHITECTURE.md), [dataset](qwen-rag-stack/docs/DATASET.md), [training](qwen-rag-stack/docs/TRAINING.md), [evaluation](qwen-rag-stack/docs/EVALUATION.md), [experiment results](qwen-rag-stack/docs/EXPERIMENT_RESULTS.md)
 - [Local setup, training and deployment](qwen-rag-stack/HUONG_DAN_TRAIN_VA_CHAY.md)
 - [Security review](qwen-rag-stack/SECURITY_REVIEW.md)
 

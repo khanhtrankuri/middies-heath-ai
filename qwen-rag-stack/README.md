@@ -44,6 +44,24 @@ npm.cmd run dev:win
 
 For Linux, WSL, or production-like environments, use the exact platform-specific commands in [Training and operations](HUONG_DAN_TRAIN_VA_CHAY.md). The demo/stub backend does not prove that a real Qwen checkpoint or RAG index is ready.
 
+## Nghiên cứu hỏi bệnh thông minh (Qwen gốc vs Qwen fine-tune)
+
+Nền tảng nghiên cứu chính của đề tài *Ứng dụng AI cho bài toán Y tế*:
+
+- [Kiến trúc: DST, chọn câu hỏi, giả thuyết bệnh, guardrails, API](docs/ARCHITECTURE.md)
+- [Dữ liệu Meddies Vietnamese: làm sạch, chia tập chống rò rỉ, thống kê](docs/DATASET.md)
+- [Huấn luyện LoRA E2/E3, smoke test, cấu hình 8 GB / 24 GB](docs/TRAINING.md)
+- [Benchmark và định nghĩa chỉ số](docs/EVALUATION.md)
+- [Kết quả thực nghiệm (pilot) và giới hạn](docs/EXPERIMENT_RESULTS.md)
+- [Kiểm tra hiện trạng ban đầu (audit)](docs/AUDIT.md)
+
+```bash
+cd backend
+python -m training.data.prepare_dialogue                       # dữ liệu
+python -m pytest                                               # test (không cần GPU)
+python scripts/run_pilot_experiments.py --train-samples 640    # E1/E2/E3 pilot (GPU)
+```
+
 ## Training, evaluation and testing
 
 - [Full training/deployment guide](HUONG_DAN_TRAIN_VA_CHAY.md)

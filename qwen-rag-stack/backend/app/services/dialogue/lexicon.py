@@ -186,7 +186,7 @@ SLOT_LABELS: dict[str, str] = {
 }
 
 DURATION_PATTERNS = (
-    r"(?:khoang |duoc |keo dai |duoi |tren |gan |hon |ca )?\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+)?\s*(?:phut|tieng|gio|ngay|tuan|thang|nam|minutes?|hours?|days?|weeks?|months?|years?)(?: nay| roi| qua| truoc)?",
+    r"(?:khoang |duoc |keo dai |duoi |tren |gan |hon |ca )?\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+)?\s*(?:phut|tieng|gio|ngay|hom|bua|tuan|thang|nam|minutes?|hours?|days?|weeks?|months?|years?)(?: nay| roi| qua| truoc)?",
     r"(?:mot|hai|ba|bon|nam|vai|may|muoi) (?:hom|ngay|tuan|thang|nam|bua)(?: nay| roi| qua)?",
     r"(?:tu )?(?:hom qua|hom kia|sang nay|chieu nay|toi qua|dem qua|toi hom qua|sang hom qua|trua nay|chieu qua|tuan truoc|thang truoc|nam ngoai)",
     # A bare "hôm nay" is usually the visit ("hôm nay em đến khám"), not onset.
