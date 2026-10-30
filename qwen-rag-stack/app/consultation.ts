@@ -10,15 +10,95 @@ export type Citation = {
   snippet: string;
 };
 
+type SlotValue = { value: string; source: "user_reported" | "user_answer"; turn: number } | null;
+type SymptomMention = { key: string; label: string; present: boolean };
+
+export type DialogueState = {
+  provenance?: "user_reported_only";
+  subject?: "self" | "other";
+  chief_complaint?: string | null;
+  profile?: string;
+  symptoms?: SymptomMention[];
+  negated_symptoms?: SymptomMention[];
+  onset?: SlotValue;
+  duration?: SlotValue;
+  location?: SlotValue;
+  severity?: SlotValue;
+  character?: SlotValue;
+  relevant_history?: NonNullable<SlotValue>[];
+  medications?: NonNullable<SlotValue>[];
+  allergies?: NonNullable<SlotValue>[];
+  conversation_status?: "COLLECTING" | "READY_FOR_ASSESSMENT" | "EMERGENCY" | "OUT_OF_SCOPE" | "INFORMATION_REQUEST";
+};
+
+export type NextQuestion = {
+  should_ask: boolean;
+  slot: string | null;
+  slot_label: string | null;
+  text: string | null;
+  strategy: string;
+  reason: string;
+};
+
+export type CandidateCondition = {
+  name: string;
+  supporting_evidence: string[];
+  missing_evidence: string[];
+  explanation: string;
+  care_level: "routine" | "soon" | "urgent";
+};
+
+export type Assessment = {
+  eligible: boolean;
+  candidate_conditions: CandidateCondition[];
+  observed_findings: string[];
+  missing_information: string[];
+  uncertainty: string;
+  next_action: string;
+  disclaimer: string;
+};
+
 export type ConsultationResponse = {
   reply: string;
   provider: string;
-  action: "ASK_MORE" | "FINALIZE" | "GROUNDED_ANSWER" | "EMERGENCY";
+  action: "ASK_MORE" | "FINALIZE" | "GROUNDED_ANSWER" | "EMERGENCY" | "OUT_OF_SCOPE";
   grounding_status: "grounded" | "degraded" | "not_used";
   citations: Citation[];
   patient_state: { chief_complaint?: string | null; duration?: string | null; severity?: string | null };
+  dialogue_state?: DialogueState;
+  missing_information?: string[];
+  next_question?: NextQuestion | null;
+  question_source?: "model" | "template" | null;
+  assessment?: Assessment | null;
+  emergency_flags?: string[];
+  limitations?: string[];
   disclaimer: string;
 };
+
+export const CARE_LEVEL_LABEL: Record<CandidateCondition["care_level"], string> = {
+  routine: "Theo dõi / khám khi cần",
+  soon: "Nên khám trong 1–2 ngày",
+  urgent: "Nên khám trong hôm nay",
+};
+
+/** Rows for the "collected information" panel; only user-reported values. */
+export function collectedFacts(state: DialogueState | undefined): { label: string; value: string }[] {
+  if (!state) return [];
+  const rows: { label: string; value: string }[] = [];
+  const present = state.symptoms?.map((item) => item.label) ?? [];
+  if (present.length) rows.push({ label: "Triệu chứng đã ghi nhận", value: present.join(", ") });
+  const negated = state.negated_symptoms?.map((item) => item.label) ?? [];
+  if (negated.length) rows.push({ label: "Bạn cho biết không có", value: negated.join(", ") });
+  const timing = [state.onset?.value, state.duration?.value].filter(Boolean).join(" · ");
+  if (timing) rows.push({ label: "Thời gian", value: timing });
+  for (const [label, slot] of [["Vị trí", state.location], ["Mức độ", state.severity], ["Tính chất", state.character]] as const) {
+    if (slot?.value) rows.push({ label, value: slot.value });
+  }
+  for (const [label, values] of [["Tiền sử", state.relevant_history], ["Thuốc đang dùng", state.medications], ["Dị ứng", state.allergies]] as const) {
+    if (values?.length) rows.push({ label, value: values.map((item) => item.value).join(", ") });
+  }
+  return rows;
+}
 
 export const MAX_MESSAGE_LENGTH = 2000;
 export const MAX_HISTORY_MESSAGES = 64;

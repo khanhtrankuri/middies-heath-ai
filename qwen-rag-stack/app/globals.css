@@ -130,3 +130,13 @@ button:focus-visible,a:focus-visible { outline:3px solid #3c9185; outline-offset
   .topbar{height:62px;padding:0 16px}.secure-label{display:none}.new-chat{padding:8px 10px;font-size:11px}.notice{align-items:flex-start;font-size:10px}.workspace{display:block}.left-panel{border:0;border-bottom:1px solid var(--line);padding:30px 20px 22px;gap:25px}.left-panel h1{font-size:30px}.steps,.privacy-card{display:none}.chat-panel{min-height:670px}.chat-header{padding:0 18px}.messages{padding:20px 16px 12px}.message-bubble{max-width:86%}.quick-wrap,.result-card,.emergency-card{margin-left:0}.composer{margin:0 12px 14px}
 }
 @media (prefers-reduced-motion:reduce) { *{scroll-behavior:auto!important;transition:none!important} }
+.question-reason { opacity:.75; font-size:10px; }
+.condition small b { color:var(--ink); font-weight:700; }
+.condition>span.care-soon { color:#8a6a2a; background:#fbf3dc; }
+.condition>span.care-routine { color:var(--teal-deep); background:var(--mint); }
+.condition>span.care-urgent { color:#8f2f26; background:#fff0ed; }
+.missing-card { margin-top:18px; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:white; }
+.missing-card h3 { margin:0 0 8px; font-family:Georgia,serif; font-size:14px; font-weight:500; }
+.missing-card ul,.limitations ul { margin:0; padding-left:16px; color:var(--muted); font-size:10px; line-height:1.6; }
+.provenance-note { margin:12px 0 0; color:var(--muted); font-size:9px; line-height:1.5; }
+.limitations strong { font-size:11px; }
