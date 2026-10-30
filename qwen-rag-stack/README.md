@@ -1,80 +1,77 @@
-# Meddies Health AI
+# Middies Health AI — Qwen/RAG implementation
 
-Meddies Health AI là hệ thống hỗ trợ thông tin và sàng lọc sức khỏe bằng tiếng
-Việt, gồm:
+> Đây là **ứng dụng độc lập** được bảo toàn từ các nhánh `feat/initial-project` và `claude/youthful-meitner-0kodvk` sau khi merge vào `main`. Ứng dụng Gemini API nằm tại [thư mục gốc](../README.md). Hai ứng dụng **không dùng chung backend, dependencies hoặc model**.
 
-- giao diện React/TypeScript;
-- FastAPI backend;
-- Qwen3-0.6B hoặc Qwen3-1.7B với BF16 LoRA;
-- hybrid RAG: BM25 + BGE-M3 + RRF + BGE reranker;
-- kiểm tra dấu hiệu khẩn cấp và trích dẫn nguồn.
+## Mục đích và giới hạn
 
-Đây không phải hệ thống chẩn đoán và không thay thế nhân viên y tế.
+Ứng dụng nghiên cứu hỗ trợ tư vấn sức khỏe ban đầu bằng tiếng Việt với mô hình Qwen chạy local, bộ phát hiện dấu hiệu nguy hiểm, hỏi thêm thông tin, truy xuất tài liệu và dẫn nguồn. Không dùng để tự chẩn đoán, thay bác sĩ, kê thuốc hay quyết định xử trí cấp cứu.
 
-## Bắt đầu
+## Kiến trúc
 
-Toàn bộ quy trình cài đặt, chuẩn bị dữ liệu, train, smoke test, đánh giá, tạo RAG
-index và chạy hệ thống được giữ tại một tài liệu duy nhất:
+```text
+Web (Next.js / React / Vinext)
+    │
+    ▼
+FastAPI  (backend/app/main.py)
+    │
+    ├── Red-flag safety rules / scope handling
+    ├── Multi-turn consultation and missing-data questions
+    ├── Query construction
+    ├── Hybrid RAG: BM25 + BGE-M3 dense
+    ├── RRF fusion + reranking
+    └── Qwen3 inference + optional LoRA adapter
+                   └── Grounded answer and citations
+```
 
-**[Hướng dẫn train và chạy hệ thống](HUONG_DAN_TRAIN_VA_CHAY.md)**
+**Supported local model candidates** in training/evaluation scripts: `Qwen/Qwen3-1.7B` and `Qwen/Qwen3-0.6B`. Separate Kaggle training path includes a Qwen3-8B option, but not all inference/evaluation scripts support that adapter. See [Training and operations](HUONG_DAN_TRAIN_VA_CHAY.md) rather than treating all model variants as drop-in replacements.
 
-Cấu hình giới hạn API, ranh giới tin cậy đăng nhập và kết quả kiểm tra:
-**[Kiểm tra bảo mật và dependency](SECURITY_REVIEW.md)**.
+Retrieval requires a **built knowledge index** with documents vetted for provenance and permission to use. The six starter references are test fixtures, not clinically reviewed production knowledge.
 
-Chạy nhanh giao diện và backend giả lập, không cần GPU:
+## Quick start: demo backend without GPU (Windows PowerShell)
+
+From the **`qwen-rag-stack/` directory**:
 
 ```powershell
 npm.cmd ci
 npm.cmd run backend:demo
 ```
 
-Trong terminal khác:
+In another terminal at the same directory:
 
 ```powershell
 npm.cmd run dev:win
 ```
 
-## Kiến trúc
+For Linux, WSL, or production-like environments, use the exact platform-specific commands in [Training and operations](HUONG_DAN_TRAIN_VA_CHAY.md). The demo/stub backend does not prove that a real Qwen checkpoint or RAG index is ready.
 
-```text
-Browser
-  -> React UI
-  -> FastAPI
-  -> emergency/red-flag screening
-  -> query builder
-  -> BM25 + BGE-M3
-  -> reciprocal-rank fusion
-  -> BGE cross-encoder reranker
-  -> context budgeting
-  -> configured Qwen3 model + LoRA adapter
-  -> citation validation
-```
+## Training, evaluation and testing
 
-Training dùng thứ tự cấu hình:
+- [Full training/deployment guide](HUONG_DAN_TRAIN_VA_CHAY.md)
+- [Evaluation definitions](backend/evals/QUALITY.md)
+- [Triage regression rules](backend/evals/TRIAGE_RULES.md)
+- [Medical knowledge corpus conventions](backend/data/knowledge/README.md)
+- [Starter retrieval fixture](backend/data/reference_starter/README.md)
+- [Historical security review](SECURITY_REVIEW.md)
 
-```text
-defaults -> hardware YAML -> CLI overrides
-```
-
-Hai hardware profile được duy trì:
-
-- `backend/training/configs/rtx4090_24gb.yaml`
-- `backend/training/configs/rtx4060_8gb.yaml`
-
-Model được chọn độc lập bằng `--model-name`:
-
-- `Qwen/Qwen3-1.7B`
-- `Qwen/Qwen3-0.6B`
-
-## Các lệnh kiểm tra
+Typical checks, from `qwen-rag-stack/`:
 
 ```powershell
 npm.cmd run backend:test
 npm.cmd run typecheck
-npm.cmd run lint:win
 npm.cmd run test:unit
-npm.cmd run build:win
-npm.cmd run validate:artifact:win
+npm.cmd run lint:win
 ```
 
-Các biến môi trường backend mẫu nằm tại `backend/.env.example`.
+These are **commands**, not claims that tests passed in the merged state. Run them on the target machine before deployment.
+
+## Data, model selection and medical assurance
+
+Meddies conversation data can help develop language behavior, but synthetic `target_disease` and synthetic answers are not validated clinical labels. Do not report clinical accuracy from those labels alone. Any training, inference or citation-quality improvement must be verified on an independent, clinician-reviewed holdout, with priority for emergency miss rate, unsafe advice and unsupported claims.
+
+This application sends data to locally configured backend/model services; check configuration, logs, remote artifact downloads and deployment before claiming that information never leaves a device.
+
+## Relationship to the Gemini application
+
+The root project uses **React/Vite + Express + hosted Gemini**, with four user-facing functions. This app uses **Next.js/Vinext + FastAPI + Qwen/RAG** and focuses on consultation. The Gemini evaluation script under root `evaluation/` is not automatically compatible with this FastAPI response schema.
+
+See [Repository architecture](../ARCHITECTURE.md) for the side-by-side comparison.
