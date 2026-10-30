@@ -1,5 +1,8 @@
 # Middies Health AI — Hệ Thống Trợ Lý Y Tế & Chăm Sóc Sức Khỏe Cá Nhân Toàn Diện
 
+> **Tài liệu lịch sử:** Đây là bản kế hoạch triển khai ban đầu của Gemini app trước khi có mã nguồn. Các nhận định rằng repository chưa có frontend/backend đã lỗi thời. Để xem kiến trúc hiện tại sau merge, dùng [README](../../../../README.md) và [ARCHITECTURE](../../../../ARCHITECTURE.md) ở thư mục gốc.
+
+
 Đánh giá hiện trạng kho mã nguồn (hiện mới chỉ khởi tạo tệp `README.md` trống) và thiết lập kiến trúc hoàn chỉnh từ đầu cho **Middies Health AI** — nền tảng chatbot y tế đa phương thức, phân loại mức độ khẩn cấp lâm sàng (Triage), giải thích đơn thuốc/kết quả xét nghiệm qua hình ảnh, kiểm tra tương tác thuốc và quản lý hồ sơ sức khỏe cá nhân ổn định, bảo mật.
 
 ---
