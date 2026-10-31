@@ -95,7 +95,8 @@ class ConsultationOrchestrator:
         state: DialogueState, assessment: dict | None,
     ) -> ConsultationResponse:
         allow_ungrounded = os.getenv("MEDDIES_ALLOW_UNGROUNDED", "false").lower() in {"1", "true", "yes"}
-        if allow_ungrounded or self.provider_name == "stub":
+        generated = allow_ungrounded or self.provider_name == "stub"
+        if generated:
             reply = await self.inference.generate(
                 inference_messages(DEGRADED_PROMPT, trim_conversation(messages))
             )
@@ -114,6 +115,7 @@ class ConsultationOrchestrator:
         return self._response(
             state,
             reply=f"{remove_unknown_citations(_remove_certain_diagnosis(reply), [])}\n\n{notice}",
+            provider=self.provider_name if generated else "planner-template",
             action=action,
             grounding_status="degraded",
             citations=[],
@@ -197,6 +199,8 @@ class ConsultationOrchestrator:
                 return await self._ask(messages, state, patient_state)
             assessment = generate_hypotheses(state).model_dump(mode="json")
             if state.unable_to_continue or not assessment["eligible"]:
+                assessment["uncertainty"] = "Chưa đủ thông tin để xác định nguyên nhân hoặc gợi ý bệnh cụ thể."
+                assessment["next_action"] = "Có thể dừng trao đổi và liên hệ nhân viên y tế để được đánh giá trực tiếp."
                 return self._response(
                     state, action="FINALIZE", provider="planner-template", grounding_status="not_used",
                     reply="Chưa đủ thông tin để xác định nguyên nhân. Bạn có thể dừng trao đổi và liên hệ nhân viên y tế để được đánh giá trực tiếp.",

@@ -89,3 +89,16 @@ def test_api_returns_structured_dialogue_fields():
             {"role": "user", "content": "Viết code python sắp xếp mảng"},
         ]})
         assert refused.json()["action"] == "OUT_OF_SCOPE"
+
+
+def test_unknown_answer_finalizes_without_requesting_more_information(tmp_path):
+    inference = FixedInference("must not generate")
+    response = respond(inference, [
+        {"role": "user", "content": "Tôi đau bụng từ hôm qua"},
+        {"role": "assistant", "content": "Bạn đau ở đâu?"},
+        {"role": "user", "content": "Tôi không biết"},
+    ], tmp_path)
+    assert response.action == "FINALIZE" and response.provider == "planner-template"
+    assert response.assessment["candidate_conditions"] == []
+    assert "dừng" in response.assessment["next_action"]
+    assert not inference.calls

@@ -52,7 +52,7 @@ def main():
         f"- Trainer runtime {metrics['train_runtime']:.2f} giây; peak allocator {metrics['peak_gpu_memory_gb']:.3f} GB; best checkpoint `{metrics['best_checkpoint']}`. Bộ nhớ WDDM có thể bao gồm bộ nhớ chia sẻ.",
         f"- Adapter: `{args.pilot / 'final_adapter'}`; tokenizer và cấu hình được lưu cùng adapter. Đây là pilot 100 mẫu, không phải full training.", "",
         "## Kiểm thử và đánh giá", "",
-        "- Backend: 373 tests đạt; provenance, leakage, prompt parity, schema/slot validation, lỗi model, dừng thiếu thông tin và an toàn nhiều lượt có test hồi quy.",
+        "- Backend: 374 tests đạt; provenance, leakage, prompt parity, schema/slot validation, lỗi model, dừng thiếu thông tin và an toàn nhiều lượt có test hồi quy. Ứng dụng gốc có thêm 5 safety regression tests đạt.",
         "- Frontend Windows: TypeScript, ESLint, 9 unit tests, build, kiểm tra Worker/manifest/social card và rendered HTML đạt. Ứng dụng gốc cũng build/typecheck đạt.",
         "- Smoke HTTP: frontend, readiness, CORS, follow-up, dừng khi không biết, cấp cứu và schema đạt. Computer Use dừng do không xác minh được URL; chưa xác minh tương tác trực quan qua trình duyệt.",
         f"- Safety: {safety['case_count']} ca phát triển; recall {safety['emergency_recall']:.3f}; false-positive rate {safety['false_positive_rate']:.3f}. Không phải sensitivity lâm sàng.",

@@ -72,6 +72,7 @@ def test_unreviewed_sources_do_not_ground_a_medical_answer(tmp_path):
         {"role": "user", "content": "Migraine là gì?"},
     ]))
     assert response.grounding_status == "degraded" and not response.citations
+    assert response.provider == "planner-template"
     assert not inference.calls
 
 
