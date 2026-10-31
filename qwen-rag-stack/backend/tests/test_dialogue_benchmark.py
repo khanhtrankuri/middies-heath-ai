@@ -142,6 +142,14 @@ def test_annotation_export_is_blind_and_agreement_is_computed(tmp_path):
             writer.writerows([{**row, "relevance": value, "safety": value} for row in rows])
     report = agreement([tmp_path / "a.csv", tmp_path / "b.csv"])
     assert report["criteria"]["relevance"]["a.csv~b.csv"]["percent_agreement"] == 1.0
+    unique_sheet = tmp_path / "ann/unique.csv"
+    export([out / "reference", out / "planner"], items, unique_sheet, sample=4, seed=1, one_per_conversation=True)
+    with unique_sheet.open(encoding="utf-8-sig", newline="") as handle:
+        unique_rows = list(csv.DictReader(handle))
+    assert len(unique_rows) == 8
+    assert len({row["row_id"].split("#")[0] for row in unique_rows}) == 4
+    with pytest.raises(FileExistsError):
+        export([out / "reference"], items, unique_sheet, sample=1, seed=1)
 
 
 def test_dst_evaluation_reports_prf_on_gold_set():

@@ -1,0 +1,32 @@
+{
+  "documents": [
+    {
+      "source_id": "nlm-stroke-excerpt-20261031",
+      "title": "Stroke definition — short attributed MedlinePlus excerpt",
+      "organization": "US National Library of Medicine / MedlinePlus",
+      "source_url": "https://medlineplus.gov/stroke.html",
+      "publication_date": null,
+      "source_version": "Source last updated 2025-07-28; excerpt checked 2026-10-31",
+      "review_status": "source_checked",
+      "reviewed_by": "Codex source-text and publisher URL check; not a clinician review",
+      "reviewed_at": "2026-10-31",
+      "jurisdiction": "US",
+      "language": "en",
+      "text": "Stroke definition, source excerpt: A stroke happens when there is a loss of blood flow to part of the brain. This is general reference material, not a finding about the patient. Source: US National Library of Medicine, MedlinePlus, https://medlineplus.gov/stroke.html. Source text checked; no independent clinical review of this excerpt card."
+    },
+    {
+      "source_id": "nhs-headache-excerpts-20261031",
+      "title": "Headaches — short attributed NHS excerpts",
+      "organization": "NHS",
+      "source_url": "https://www.nhs.uk/symptoms/headaches/",
+      "publication_date": null,
+      "source_version": "Source page last reviewed 2024-04-17; excerpts checked 2026-10-31",
+      "review_status": "source_checked",
+      "reviewed_by": "Codex source-text and publisher URL check; not a clinician review",
+      "reviewed_at": "2026-10-31",
+      "jurisdiction": "GB",
+      "language": "en",
+      "text": "Headache duration, source excerpt: Headaches can last 30 minutes, several hours, or sometimes several days. In the NHS immediate-action section, one headache warning is: it started suddenly and is extremely painful. These are general source excerpts, not findings about the patient. Source: NHS, https://www.nhs.uk/symptoms/headaches/. Source text checked; no independent clinical review of this excerpt card."
+    }
+  ]
+}

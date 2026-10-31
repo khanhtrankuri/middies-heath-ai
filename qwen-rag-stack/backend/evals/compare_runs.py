@@ -119,6 +119,8 @@ def compare(paths: list[Path]) -> tuple[dict[str, Any], str]:
         _fmt(run["metrics"]["question_generation"]["latency_seconds"]["mean"], 2) for run, _, _ in runs) + " |")
     lines.append("| Peak GPU memory (GB) | " + " | ".join(
         _fmt(run["runtime"].get("peak_gpu_memory_gb"), 2) for run, _, _ in runs) + " |")
+    lines.append("| Generated tokens/second (toàn run) | " + " | ".join(
+        _fmt(run["runtime"].get("generated_tokens_per_second"), 2) for run, _, _ in runs) + " |")
     lines += ["", f"## Chênh lệch ghép cặp so với `{names[0]}`", "",
               "| So sánh | Chỉ số | Chênh lệch | CI 95% | n mục |", "|---|---|---|---|---|"]
     for run, rows, _ in runs[1:]:

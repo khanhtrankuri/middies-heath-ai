@@ -21,7 +21,8 @@ from pathlib import Path
 
 from evals.dialogue_metrics import cohen_kappa
 
-CRITERIA = ("relevance", "non_redundancy", "safety", "clarity")
+CRITERIA = ("relevance", "non_redundancy", "safety", "clarity", "context_sufficiency",
+            "risk_handling", "no_fabrication", "no_premature_diagnosis")
 
 
 def _load_rows(run_dir: Path) -> dict[str, dict]:
@@ -33,10 +34,19 @@ def _load_rows(run_dir: Path) -> dict[str, dict]:
     return rows
 
 
-def export(runs: list[Path], test_items: list[dict], output: Path, *, sample: int, seed: int) -> None:
+def export(runs: list[Path], test_items: list[dict], output: Path, *, sample: int, seed: int, one_per_conversation: bool = False) -> None:
+    if output.exists() or output.with_name(output.stem + "_KEY_do_not_share.json").exists():
+        raise FileExistsError("Annotation export exists; preserve prior review work")
     by_run = {run.name: _load_rows(run) for run in runs}
     common = sorted(set.intersection(*(set(rows) for rows in by_run.values())))
     rng = random.Random(seed)
+    if one_per_conversation:
+        by_conversation = {}
+        items = {item["item_id"]: item for item in test_items}
+        for item_id in common:
+            if item_id in items:
+                by_conversation.setdefault(items[item_id]["conversation_id"], []).append(item_id)
+        common = [rng.choice(sorted(by_conversation[key])) for key in sorted(by_conversation)]
     chosen = rng.sample(common, min(sample, len(common)))
     prefixes = {item["item_id"]: item["prefix"] for item in test_items}
     codes = {name: f"S{index + 1}" for index, name in enumerate(rng.sample(sorted(by_run), len(by_run)))}
@@ -66,7 +76,7 @@ def agreement(files: list[Path]) -> dict:
     for criterion in CRITERIA:
         pairs = {}
         for (i, left), (j, right) in itertools.combinations(enumerate(sheets), 2):
-            usable = [r for r in common if left[r][criterion].strip() and right[r][criterion].strip()]
+            usable = [r for r in common if left[r].get(criterion, "").strip() and right[r].get(criterion, "").strip()]
             a = [int(left[r][criterion]) for r in usable]
             b = [int(right[r][criterion]) for r in usable]
             pairs[f"{files[i].name}~{files[j].name}"] = {
@@ -87,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     exp.add_argument("--max-turn", type=int, default=3)
     exp.add_argument("--seed", type=int, default=42)
     exp.add_argument("--sample", type=int, default=60)
+    exp.add_argument("--one-per-conversation", action="store_true")
     exp.add_argument("--output", type=Path, default=Path("reports/annotation/question_quality.csv"))
     agr = sub.add_parser("agree")
     agr.add_argument("files", nargs="+", type=Path)
@@ -96,7 +107,8 @@ def main(argv: list[str] | None = None) -> int:
         from evals.benchmark_dialogue import build_items
 
         items = build_items(args.test_file, conversations=args.conversations, max_turn=args.max_turn, seed=args.seed)
-        export(args.runs, items, args.output, sample=args.sample, seed=args.seed)
+        export(args.runs, items, args.output, sample=args.sample, seed=args.seed,
+               one_per_conversation=args.one_per_conversation)
         print(f"Wrote {args.output} (key file written separately; do not share it with annotators)")
     else:
         if len(args.files) < 2:
