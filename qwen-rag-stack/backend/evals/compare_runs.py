@@ -17,6 +17,12 @@ from pathlib import Path
 from typing import Any
 
 PAIRED_METRICS = (
+    ("target_slot_hit", "Đúng slot Planner (proxy)", True),
+    ("repeated_information_rate", "Hỏi lại thông tin (chỉ lượt nhận diện được slot)", False),
+    ("model_accepted", "Đầu ra model được chấp nhận", True),
+    ("template_fallback", "Sử dụng template thay model", False),
+    ("multiple_questions", "Hơn một câu hỏi/lượt", False),
+    ("n_questions", "Số câu hỏi trung bình/lượt", False),
     ("asks_question", "Hỏi bổ sung (tỷ lệ lượt có câu hỏi)", True),
     ("non_redundant", "Không hỏi lại thông tin đã có", True),
     ("targets_missing", "Hỏi đúng thông tin còn thiếu", True),
@@ -74,6 +80,15 @@ def compare(paths: list[Path]) -> tuple[dict[str, Any], str]:
         raise ValueError("Runs were evaluated on different test files; comparison would be invalid")
     names = [run["run_name"] for run, _, _ in runs]
     base_run, base_rows, base_behavior = runs[0]
+    for run, rows, behavior in runs[1:]:
+        if set(rows) != set(base_rows):
+            raise ValueError("Runs must have exactly the same item ids")
+        for key in ("metric_version", "max_turn", "seed", "planner_protocol"):
+            if run.get(key) != base_run.get(key):
+                raise ValueError(f"Incompatible comparison protocol: {key}")
+        if run.get("backend") != "reference" and base_run.get("backend") != "reference":
+            if set(behavior) != set(base_behavior) or run.get("behavior_cases_sha256") != base_run.get("behavior_cases_sha256"):
+                raise ValueError("Behavior cases differ between runs")
     result: dict[str, Any] = {"runs": names, "baseline": names[0], "metrics": {}, "paired": {}}
     lines = [
         "# So sánh mô hình trên benchmark hỏi bệnh", "",
@@ -104,6 +119,8 @@ def compare(paths: list[Path]) -> tuple[dict[str, Any], str]:
         _fmt(run["metrics"]["question_generation"]["latency_seconds"]["mean"], 2) for run, _, _ in runs) + " |")
     lines.append("| Peak GPU memory (GB) | " + " | ".join(
         _fmt(run["runtime"].get("peak_gpu_memory_gb"), 2) for run, _, _ in runs) + " |")
+    lines.append("| Generated tokens/second (toàn run) | " + " | ".join(
+        _fmt(run["runtime"].get("generated_tokens_per_second"), 2) for run, _, _ in runs) + " |")
     lines += ["", f"## Chênh lệch ghép cặp so với `{names[0]}`", "",
               "| So sánh | Chỉ số | Chênh lệch | CI 95% | n mục |", "|---|---|---|---|---|"]
     for run, rows, _ in runs[1:]:

@@ -123,6 +123,9 @@ class TransformersProvider(ModelProvider):
             self.model = base
         self.model.eval()
         self.model.config.use_cache = True
+        self.identity = {"provider": "transformers", "base_model": model_name,
+                         "adapter": str(adapter) if adapter else None,
+                         "revision": getattr(self.model.config, "_commit_hash", None)}
         LOGGER.info("Loaded %s with dtype=%s and adapter=%s", model_name, dtype_name, adapter)
 
     def generate(self, messages: list[dict[str, str]]) -> str:
@@ -239,6 +242,10 @@ class InferenceManager:
     @property
     def loaded(self) -> bool:
         return self._loaded
+
+    @property
+    def identity(self) -> dict:
+        return {**getattr(self.provider, "identity", {"provider": type(self.provider).__name__}), "loaded": self.loaded}
 
     async def generate(self, messages: list[dict[str, str]]) -> str:
         # Startup deliberately keeps the safety router available when loading a

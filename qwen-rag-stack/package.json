@@ -30,6 +30,7 @@
     "lint:win": "eslint app tests scripts/*.mjs --max-warnings 0",
     "test:unit": "node --experimental-strip-types --test tests/consultation.test.mjs tests/chatgpt-auth.test.mjs",
     "smoke:local": "node scripts/smoke-local.mjs",
+    "smoke:model": "node scripts/smoke-model.mjs",
     "test:win": "npm run typecheck && npm run lint:win && npm run test:unit && npm run build:win && npm run validate:artifact:win && node --test tests/rendered-html.test.mjs",
     "validate:artifact:win": "node scripts/validate-artifact.mjs",
     "test": "npm run typecheck && npm run test:unit && npm run build && node --test tests/rendered-html.test.mjs",

@@ -1,5 +1,8 @@
 # Kết quả thực nghiệm — vòng triển khai đầu tiên (pilot)
 
+**Vòng E5 ngày 31/10/2026 được ghi riêng:** [PLANNER_E5_RESULTS_20261031.md](PLANNER_E5_RESULTS_20261031.md).
+Các số liệu E1/E2/E3 lịch sử bên dưới được giữ nguyên, không thay bằng kết quả E5 hoặc metric mới.
+
 > **Đọc trước:** E2/E3 dưới đây là **pilot** — mỗi adapter chỉ huấn luyện trên **640 hội thoại** (~2–2,5% tập
 > huấn luyện), 1 epoch, 52 bước. Đây **không** phải kết quả huấn luyện trên toàn bộ dữ liệu; huấn luyện đầy đủ
 > (ước tính 28–43 giờ/epoch trên GPU 8 GB) **chưa chạy**. Mọi chỉ số là proxy tự động trên dữ liệu synthetic,

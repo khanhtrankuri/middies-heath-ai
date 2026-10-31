@@ -50,7 +50,10 @@ async def lifespan(application: FastAPI):
     rag = create_rag_service(RAGConfig.from_env())
     rag.load()
     application.state.rag = rag
-    application.state.consultation = ConsultationOrchestrator(manager, rag, provider_name)
+    label = provider_name
+    if provider_name == "transformers" and manager.loaded:
+        label = "planner+" + str(manager.identity.get("base_model", "unknown")) + ("+lora" if manager.identity.get("adapter") else "+base")
+    application.state.consultation = ConsultationOrchestrator(manager, rag, label)
     yield
 
 

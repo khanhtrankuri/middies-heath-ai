@@ -70,6 +70,11 @@ def smoke_reload_and_generate(config: dict[str, Any], adapter_dir: Path, prompt:
     model = load_training_model(config, adapter_path=str(adapter_dir), trainable_adapter=False)
     tokenizer = load_tokenizer(config["model"]["name"])
     messages = [{"role": "user", "content": prompt}]
+    if config.get("experiment") == "E5C":
+        from app.services.dialogue import extract_dialogue_state, select_next_medical_question
+        from app.services.dialogue.prompts import planner_messages
+        state = extract_dialogue_state(messages)
+        messages = planner_messages(messages, state, select_next_medical_question(messages, state))
     template_arguments = {"tokenize": True, "add_generation_prompt": True, "return_tensors": "pt"}
     try:
         inputs = tokenizer.apply_chat_template(
@@ -121,6 +126,11 @@ def _run_training(
     initial_adapter: str | None = None,
 ) -> Path:
     validate_training_config(config)
+    output = Path(config["output"]["dir"])
+    if output.exists() and any(output.iterdir()) and not resume_from_checkpoint:
+        raise FileExistsError("Training output exists; use a new directory or explicitly resume a checkpoint")
+    if config.get("experiment") == "E5C" and initial_adapter:
+        raise ValueError("E5C starts from Qwen Base; adapter continuation needs a separate experiment id")
     if not torch.cuda.is_available():
         if torch.version.cuda is None:
             raise RuntimeError(
@@ -129,6 +139,12 @@ def _run_training(
             )
         raise RuntimeError("CUDA is unavailable. Training requires an NVIDIA CUDA GPU.")
     log_hardware(config)
+    planner_manifest = None
+    if config.get("experiment") == "E5C":
+        from training.data.planner_validation import verify_prepared
+        if len(config["dataset_mix"]) != 1:
+            raise ValueError("E5C requires one provenance-checked planner SFT dataset")
+        planner_manifest = verify_prepared(Path(config["data"]["processed_dir"]) / next(iter(config["dataset_mix"])))
     tokenizer = load_tokenizer(config["model"]["name"])
     data_dir = config["data"]["processed_dir"]
     mix = config["dataset_mix"]
@@ -181,6 +197,12 @@ def _run_training(
         "peak_gpu_memory_gb": peak_gb,
         "gpu_total_vram_gb": total_vram_gb,
         "gpu_memory_accounting": "PyTorch CUDA allocator; may include shared/virtual memory under WDDM",
+        "gpu": torch.cuda.get_device_name(0),
+        "model_revision": getattr(model.config, "_commit_hash", None),
+        "best_checkpoint": trainer.state.best_model_checkpoint,
+        "best_validation_loss": trainer.state.best_metric,
+        "train_examples": len(train_dataset), "validation_examples": len(eval_dataset),
+        "planner_data_manifest": planner_manifest,
     }
     if peak_gb > total_vram_gb:
         LOGGER.warning(
@@ -198,6 +220,7 @@ def _run_training(
         metrics["smoke_test_peak_cuda_allocator_gb"] = smoke_reload_and_generate(
             config, adapter_dir, "Tôi bị đau bụng."
         )
+        metrics["adapter_reload_verified"] = True
     save_run_metadata(config, output_dir, metrics)
     return adapter_dir
 

@@ -1,0 +1,6798 @@
+{
+  "code_commit": "a5b740a",
+  "data": {
+    "version": "planner-sft-v1",
+    "prompt_version": "consult-planner-vi-v2",
+    "source_file_sha256": {
+      "train": "e239e8016e034128b26b3d9622e0e6456e47d3842d092aeb5425cbcdaa517f0a",
+      "validation": "cee70e9b26c1ae75f82107acc03733a0ba5450d92b82869ec430bc8d843ad4d1",
+      "test": "71bd88fc3e0a1e7ec067045116d2407e95dc1615d86cd70838628caadb8bcedb"
+    },
+    "source_manifest_sha256": "f217031373182211b5cdcd6985bedbfbc4e2f50a3e7b7ad5588bb8e4d095ae46",
+    "dataset_revision": "05428709a7572f6f0d4aa5045e6ba255fa85af51",
+    "allow_unreviewed_templates": false,
+    "max_conversations_per_split": 2000,
+    "splits": {
+      "train": {
+        "conversations_seen": 2000,
+        "rejected": 3475,
+        "rejected:stop_emergency_or_scope": 1862,
+        "rejected:no_question,reference_question_count": 913,
+        "auto_filtered_dataset_question": 234,
+        "kept": 234,
+        "rejected:no_question,off_target,reference_question_count": 512,
+        "rejected:no_question,reference_question_count,unsafe_reference": 134,
+        "rejected:no_question,off_target,reference_question_count,unsafe_reference": 44,
+        "rejected:unsafe_reference": 10
+      },
+      "validation": {
+        "conversations_seen": 2000,
+        "rejected": 3537,
+        "rejected:stop_emergency_or_scope": 1856,
+        "rejected:no_question,off_target,reference_question_count": 618,
+        "rejected:no_question,off_target,reference_question_count,unsafe_reference": 46,
+        "auto_filtered_dataset_question": 208,
+        "kept": 208,
+        "rejected:no_question,reference_question_count": 864,
+        "rejected:unsafe_reference": 14,
+        "rejected:no_question,reference_question_count,unsafe_reference": 139,
+        "cross_split_opening_excluded": 2
+      }
+    },
+    "clinical_review": "pending; automatic filtering is not medical validation",
+    "output_sha256": {
+      "train.jsonl": "f74e7d498c3bf0fe8b177d2b5a6c05a1f325c6e493e048487622022fa65405bb",
+      "validation.jsonl": "c00a2b223246ef7dad16c90a8187da495002fb66f3d6a76b43e23a4592201cb7",
+      "audit.jsonl": "a7add3c1485b821652fd6a5d37364df305c9a2b6f7fc836d89f8fd9d7f3b8e5f"
+    },
+    "code_sha256": {
+      "app/services/dialogue/__init__.py": "fa02f5973210aae991a09629fd9c4eb5223e1ecd59623b57cebea12ccf17a271",
+      "app/services/dialogue/features.py": "41da67a2f701714c6c15de2acc0994704a9fa03e0fabcda06f711ea1eb25fa59",
+      "app/services/dialogue/guardrails.py": "243b04113e01fd24cd9d8108962948ec9c430dc7b3c085a7e6540afc8f2d3541",
+      "app/services/dialogue/hypotheses.py": "f5e3ad3f7bced0f330268aabc7ca745fc5d81791305287ae561134bd0c3f393d",
+      "app/services/dialogue/knowledge.py": "5e731ba0f2870401d54ae719c83d8d867f2aeb27ff5261ed9758dc33d0d71238",
+      "app/services/dialogue/lexicon.py": "f8a8133feaa30452c10a12cfadbc6fc981683761b7d458a7f4fe37785bfeeb32",
+      "app/services/dialogue/planner.py": "242c338c526d2e118412c6b6a905b40ea3e1afd211fcefdbad6177bcf170f735",
+      "app/services/dialogue/profiles.py": "f48230dc3ee41bf502a1f3ffd49ff425f0481a4c94f8e3af5b240d295b8aa7d7",
+      "app/services/dialogue/prompts.py": "d339be7c4dbf3279071e2db65ca3290e551d5d86305a6f7210b96c8ba2dbaff9",
+      "app/services/dialogue/question_generator.py": "5c08d38fd654b01a968ce4f8e5625f7faaf1c971f2dea2dd22aaf8abc10e6aa0",
+      "app/services/dialogue/state.py": "3ed92b2efe5c68a17bb3ad5365bcd735d3d888e19fb23cc945fe185ea3828f79",
+      "training/data/prepare_planner_sft.py": "51dbcbafd2d763d8c0fa488dbc9ba60851fe87d170c26b30314538fab0c441d3"
+    }
+  },
+  "pilot": {
+    "config": {
+      "model": {
+        "name": "Qwen/Qwen3-1.7B",
+        "dtype": "bfloat16",
+        "attention_implementation": "sdpa"
+      },
+      "lora": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "bias": "none",
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ]
+      },
+      "data": {
+        "processed_dir": "data/processed"
+      },
+      "dataset_mix": {
+        "vietnamese_planner_sft_v1": 1.0
+      },
+      "training": {
+        "max_seq_length": 2048,
+        "per_device_train_batch_size": 1,
+        "per_device_eval_batch_size": 1,
+        "gradient_accumulation_steps": 16,
+        "learning_rate": 0.0001,
+        "num_train_epochs": 1,
+        "bf16": true,
+        "fp16": false,
+        "gradient_checkpointing": true,
+        "packing": false,
+        "optim": "adamw_torch",
+        "warmup_ratio": 0.03,
+        "lr_scheduler_type": "cosine",
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "dataloader_num_workers": 0,
+        "logging_steps": 10,
+        "eval_strategy": "steps",
+        "eval_steps": 2,
+        "save_strategy": "steps",
+        "save_steps": 2,
+        "save_total_limit": 2,
+        "seed": 42,
+        "load_best_model_at_end": true,
+        "metric_for_best_model": "eval_loss",
+        "greater_is_better": false
+      },
+      "output": {
+        "dir": "models/E5C_pilot_20261031"
+      },
+      "tracking": {
+        "enabled": false
+      },
+      "experiment": "E5C"
+    },
+    "metrics": {
+      "train_runtime": 183.8908,
+      "train_samples_per_second": 0.538,
+      "train_steps_per_second": 0.038,
+      "train_tokens_per_second": 509.259,
+      "total_flos": 801725748314112.0,
+      "train_loss": 2.7590909685407365,
+      "eval_loss": 2.150799036026001,
+      "eval_runtime": 22.2302,
+      "eval_samples_per_second": 1.395,
+      "eval_steps_per_second": 1.395,
+      "peak_gpu_memory_gb": 6.226472854614258,
+      "gpu_total_vram_gb": 7.99560546875,
+      "gpu_memory_accounting": "PyTorch CUDA allocator; may include shared/virtual memory under WDDM",
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "model_revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "best_checkpoint": "models/E5C_pilot_20261031\\checkpoint-6",
+      "best_validation_loss": 2.150799036026001,
+      "train_examples": 99,
+      "validation_examples": 31,
+      "planner_data_manifest": {
+        "version": "planner-sft-v1",
+        "prompt_version": "consult-planner-vi-v2",
+        "source_file_sha256": {
+          "train": "e239e8016e034128b26b3d9622e0e6456e47d3842d092aeb5425cbcdaa517f0a",
+          "validation": "cee70e9b26c1ae75f82107acc03733a0ba5450d92b82869ec430bc8d843ad4d1",
+          "test": "71bd88fc3e0a1e7ec067045116d2407e95dc1615d86cd70838628caadb8bcedb"
+        },
+        "source_manifest_sha256": "f217031373182211b5cdcd6985bedbfbc4e2f50a3e7b7ad5588bb8e4d095ae46",
+        "dataset_revision": "05428709a7572f6f0d4aa5045e6ba255fa85af51",
+        "allow_unreviewed_templates": false,
+        "max_conversations_per_split": 2000,
+        "splits": {
+          "train": {
+            "conversations_seen": 2000,
+            "rejected": 3475,
+            "rejected:stop_emergency_or_scope": 1862,
+            "rejected:no_question,reference_question_count": 913,
+            "auto_filtered_dataset_question": 234,
+            "kept": 234,
+            "rejected:no_question,off_target,reference_question_count": 512,
+            "rejected:no_question,reference_question_count,unsafe_reference": 134,
+            "rejected:no_question,off_target,reference_question_count,unsafe_reference": 44,
+            "rejected:unsafe_reference": 10
+          },
+          "validation": {
+            "conversations_seen": 2000,
+            "rejected": 3537,
+            "rejected:stop_emergency_or_scope": 1856,
+            "rejected:no_question,off_target,reference_question_count": 618,
+            "rejected:no_question,off_target,reference_question_count,unsafe_reference": 46,
+            "auto_filtered_dataset_question": 208,
+            "kept": 208,
+            "rejected:no_question,reference_question_count": 864,
+            "rejected:unsafe_reference": 14,
+            "rejected:no_question,reference_question_count,unsafe_reference": 139,
+            "cross_split_opening_excluded": 2
+          }
+        },
+        "clinical_review": "pending; automatic filtering is not medical validation",
+        "output_sha256": {
+          "train.jsonl": "f74e7d498c3bf0fe8b177d2b5a6c05a1f325c6e493e048487622022fa65405bb",
+          "validation.jsonl": "c00a2b223246ef7dad16c90a8187da495002fb66f3d6a76b43e23a4592201cb7",
+          "audit.jsonl": "a7add3c1485b821652fd6a5d37364df305c9a2b6f7fc836d89f8fd9d7f3b8e5f"
+        },
+        "code_sha256": {
+          "app/services/dialogue/__init__.py": "fa02f5973210aae991a09629fd9c4eb5223e1ecd59623b57cebea12ccf17a271",
+          "app/services/dialogue/features.py": "41da67a2f701714c6c15de2acc0994704a9fa03e0fabcda06f711ea1eb25fa59",
+          "app/services/dialogue/guardrails.py": "243b04113e01fd24cd9d8108962948ec9c430dc7b3c085a7e6540afc8f2d3541",
+          "app/services/dialogue/hypotheses.py": "f5e3ad3f7bced0f330268aabc7ca745fc5d81791305287ae561134bd0c3f393d",
+          "app/services/dialogue/knowledge.py": "5e731ba0f2870401d54ae719c83d8d867f2aeb27ff5261ed9758dc33d0d71238",
+          "app/services/dialogue/lexicon.py": "f8a8133feaa30452c10a12cfadbc6fc981683761b7d458a7f4fe37785bfeeb32",
+          "app/services/dialogue/planner.py": "242c338c526d2e118412c6b6a905b40ea3e1afd211fcefdbad6177bcf170f735",
+          "app/services/dialogue/profiles.py": "f48230dc3ee41bf502a1f3ffd49ff425f0481a4c94f8e3af5b240d295b8aa7d7",
+          "app/services/dialogue/prompts.py": "d339be7c4dbf3279071e2db65ca3290e551d5d86305a6f7210b96c8ba2dbaff9",
+          "app/services/dialogue/question_generator.py": "5c08d38fd654b01a968ce4f8e5625f7faaf1c971f2dea2dd22aaf8abc10e6aa0",
+          "app/services/dialogue/state.py": "3ed92b2efe5c68a17bb3ad5365bcd735d3d888e19fb23cc945fe185ea3828f79",
+          "training/data/prepare_planner_sft.py": "51dbcbafd2d763d8c0fa488dbc9ba60851fe87d170c26b30314538fab0c441d3"
+        }
+      }
+    }
+  },
+  "smoke": {
+    "config": {
+      "model": {
+        "name": "Qwen/Qwen3-1.7B",
+        "dtype": "bfloat16",
+        "attention_implementation": "sdpa"
+      },
+      "lora": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "bias": "none",
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ]
+      },
+      "data": {
+        "processed_dir": "data/processed"
+      },
+      "dataset_mix": {
+        "vietnamese_planner_sft_v1": 1.0
+      },
+      "training": {
+        "max_seq_length": 2048,
+        "per_device_train_batch_size": 1,
+        "per_device_eval_batch_size": 1,
+        "gradient_accumulation_steps": 16,
+        "learning_rate": 0.0001,
+        "num_train_epochs": 1,
+        "bf16": true,
+        "fp16": false,
+        "gradient_checkpointing": true,
+        "packing": false,
+        "optim": "adamw_torch",
+        "warmup_ratio": 0.03,
+        "lr_scheduler_type": "cosine",
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "dataloader_num_workers": 0,
+        "logging_steps": 10,
+        "eval_strategy": "steps",
+        "eval_steps": 10,
+        "save_strategy": "steps",
+        "save_steps": 10,
+        "save_total_limit": 2,
+        "seed": 42,
+        "load_best_model_at_end": true,
+        "metric_for_best_model": "eval_loss",
+        "greater_is_better": false
+      },
+      "output": {
+        "dir": "models/E5C_smoke_20261031"
+      },
+      "tracking": {
+        "enabled": false
+      },
+      "experiment": "E5C"
+    },
+    "metrics": {
+      "train_runtime": 77.0344,
+      "train_samples_per_second": 0.623,
+      "train_steps_per_second": 0.039,
+      "train_tokens_per_second": 777.626,
+      "total_flos": 385795416047616.0,
+      "train_loss": 3.009949525197347,
+      "eval_loss": 2.864590644836426,
+      "eval_runtime": 3.3636,
+      "eval_samples_per_second": 2.378,
+      "eval_steps_per_second": 2.378,
+      "peak_gpu_memory_gb": 6.006935119628906,
+      "gpu_total_vram_gb": 7.99560546875,
+      "gpu_memory_accounting": "PyTorch CUDA allocator; may include shared/virtual memory under WDDM",
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "model_revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "best_checkpoint": "models/E5C_smoke_20261031\\checkpoint-3",
+      "best_validation_loss": 2.864590644836426,
+      "train_examples": 32,
+      "validation_examples": 8,
+      "planner_data_manifest": {
+        "version": "planner-sft-v1",
+        "prompt_version": "consult-planner-vi-v2",
+        "source_file_sha256": {
+          "train": "e239e8016e034128b26b3d9622e0e6456e47d3842d092aeb5425cbcdaa517f0a",
+          "validation": "cee70e9b26c1ae75f82107acc03733a0ba5450d92b82869ec430bc8d843ad4d1",
+          "test": "71bd88fc3e0a1e7ec067045116d2407e95dc1615d86cd70838628caadb8bcedb"
+        },
+        "source_manifest_sha256": "f217031373182211b5cdcd6985bedbfbc4e2f50a3e7b7ad5588bb8e4d095ae46",
+        "dataset_revision": "05428709a7572f6f0d4aa5045e6ba255fa85af51",
+        "allow_unreviewed_templates": false,
+        "max_conversations_per_split": 2000,
+        "splits": {
+          "train": {
+            "conversations_seen": 2000,
+            "rejected": 3475,
+            "rejected:stop_emergency_or_scope": 1862,
+            "rejected:no_question,reference_question_count": 913,
+            "auto_filtered_dataset_question": 234,
+            "kept": 234,
+            "rejected:no_question,off_target,reference_question_count": 512,
+            "rejected:no_question,reference_question_count,unsafe_reference": 134,
+            "rejected:no_question,off_target,reference_question_count,unsafe_reference": 44,
+            "rejected:unsafe_reference": 10
+          },
+          "validation": {
+            "conversations_seen": 2000,
+            "rejected": 3537,
+            "rejected:stop_emergency_or_scope": 1856,
+            "rejected:no_question,off_target,reference_question_count": 618,
+            "rejected:no_question,off_target,reference_question_count,unsafe_reference": 46,
+            "auto_filtered_dataset_question": 208,
+            "kept": 208,
+            "rejected:no_question,reference_question_count": 864,
+            "rejected:unsafe_reference": 14,
+            "rejected:no_question,reference_question_count,unsafe_reference": 139,
+            "cross_split_opening_excluded": 2
+          }
+        },
+        "clinical_review": "pending; automatic filtering is not medical validation",
+        "output_sha256": {
+          "train.jsonl": "f74e7d498c3bf0fe8b177d2b5a6c05a1f325c6e493e048487622022fa65405bb",
+          "validation.jsonl": "c00a2b223246ef7dad16c90a8187da495002fb66f3d6a76b43e23a4592201cb7",
+          "audit.jsonl": "a7add3c1485b821652fd6a5d37364df305c9a2b6f7fc836d89f8fd9d7f3b8e5f"
+        },
+        "code_sha256": {
+          "app/services/dialogue/__init__.py": "fa02f5973210aae991a09629fd9c4eb5223e1ecd59623b57cebea12ccf17a271",
+          "app/services/dialogue/features.py": "41da67a2f701714c6c15de2acc0994704a9fa03e0fabcda06f711ea1eb25fa59",
+          "app/services/dialogue/guardrails.py": "243b04113e01fd24cd9d8108962948ec9c430dc7b3c085a7e6540afc8f2d3541",
+          "app/services/dialogue/hypotheses.py": "f5e3ad3f7bced0f330268aabc7ca745fc5d81791305287ae561134bd0c3f393d",
+          "app/services/dialogue/knowledge.py": "5e731ba0f2870401d54ae719c83d8d867f2aeb27ff5261ed9758dc33d0d71238",
+          "app/services/dialogue/lexicon.py": "f8a8133feaa30452c10a12cfadbc6fc981683761b7d458a7f4fe37785bfeeb32",
+          "app/services/dialogue/planner.py": "242c338c526d2e118412c6b6a905b40ea3e1afd211fcefdbad6177bcf170f735",
+          "app/services/dialogue/profiles.py": "f48230dc3ee41bf502a1f3ffd49ff425f0481a4c94f8e3af5b240d295b8aa7d7",
+          "app/services/dialogue/prompts.py": "d339be7c4dbf3279071e2db65ca3290e551d5d86305a6f7210b96c8ba2dbaff9",
+          "app/services/dialogue/question_generator.py": "5c08d38fd654b01a968ce4f8e5625f7faaf1c971f2dea2dd22aaf8abc10e6aa0",
+          "app/services/dialogue/state.py": "3ed92b2efe5c68a17bb3ad5365bcd735d3d888e19fb23cc945fe185ea3828f79",
+          "training/data/prepare_planner_sft.py": "51dbcbafd2d763d8c0fa488dbc9ba60851fe87d170c26b30314538fab0c441d3"
+        }
+      },
+      "smoke_test_peak_cuda_allocator_gb": 6.006935119628906,
+      "adapter_reload_verified": true
+    }
+  },
+  "comparison": {
+    "runs": [
+      "E1_base-rescored-dialogue-metrics-v4",
+      "E2_pilot_lora-rescored-dialogue-metrics-v4",
+      "E3_pilot_lora-rescored-dialogue-metrics-v4",
+      "release_20261031_E4",
+      "release_20261031_E5A",
+      "release_20261031_E5B",
+      "release_20261031_E5C"
+    ],
+    "baseline": "E1_base-rescored-dialogue-metrics-v4",
+    "metrics": {
+      "E1_base-rescored-dialogue-metrics-v4": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.2983050847457627,
+            "ci95": [
+              0.2525597269624573,
+              0.3525423728813559
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 0.9966101694915255,
+            "ci95": [
+              0.9897610921501706,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.06779661016949153,
+            "ci95": [
+              0.04054054054054054,
+              0.10101010101010101
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.04971751412429378,
+            "ci95": [
+              0.029842342342342343,
+              0.0743847874720358
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.04362200838884777,
+            "ci95": [
+              0.022205773501110283,
+              0.06783804430863255
+            ],
+            "n": 193
+          },
+          "over_question_limit": {
+            "mean": 0.0847457627118644,
+            "ci95": [
+              0.05782312925170068,
+              0.11486486486486487
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.4406779661016949,
+            "ci95": [
+              0.3890784982935154,
+              0.4882154882154882
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.006779661016949152,
+            "ci95": [
+              0.0,
+              0.017006802721088437
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.6338983050847458,
+            "ci95": [
+              0.5223367697594502,
+              0.764505119453925
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 490.8271186440678,
+            "ci95": [
+              481.8989898989899,
+              498.7939189189189
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 2.6395396610169506,
+            "ci95": [
+              2.6246513793103436,
+              2.6539054794520576
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.015267175572519083,
+            "ci95": [
+              0.0,
+              0.03676470588235294
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.020833333333333332,
+            "ci95": [
+              0.0,
+              0.06521739130434782
+            ],
+            "n": 48
+          },
+          "model_accepted": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "template_fallback": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "multiple_questions": {
+            "mean": 0.22033898305084745,
+            "ci95": [
+              0.17346938775510204,
+              0.272108843537415
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.49,
+              "ci95": [
+                0.4,
+                0.59
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.66,
+              "ci95": [
+                0.57,
+                0.75
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.17346938775510204,
+              "ci95": [
+                0.10204081632653061,
+                0.25510204081632654
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.6530612244897959,
+              "ci95": [
+                0.5510204081632653,
+                0.7448979591836735
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.2268041237113402,
+              "ci95": [
+                0.14432989690721648,
+                0.31958762886597936
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 0.9896907216494846,
+              "ci95": [
+                0.9587628865979382,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 6,
+            "n": 10
+          },
+          "injection": {
+            "passed": 3,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 1,
+            "n": 5
+          },
+          "model_emergency_recall": 0.6,
+          "model_under_triage_rate": 0.4
+        },
+        "information_completeness": {
+          "mean": 0.0658974358974359,
+          "ci95": [
+            0.03051282051282051,
+            0.10435897435897434
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.006172839506172839,
+          "n": 324
+        }
+      },
+      "E2_pilot_lora-rescored-dialogue-metrics-v4": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.8813559322033898,
+            "ci95": [
+              0.8406779661016949,
+              0.9194630872483222
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 0.9355932203389831,
+            "ci95": [
+              0.9078498293515358,
+              0.962457337883959
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.25084745762711863,
+            "ci95": [
+              0.20068027210884354,
+              0.3053691275167785
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.17790960451977403,
+            "ci95": [
+              0.1380225988700565,
+              0.22296544035674476
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.11724206349206348,
+            "ci95": [
+              0.08565451285116557,
+              0.15476190476190474
+            ],
+            "n": 240
+          },
+          "over_question_limit": {
+            "mean": 0.7220338983050848,
+            "ci95": [
+              0.6632302405498282,
+              0.7804054054054054
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.08813559322033898,
+            "ci95": [
+              0.05782312925170068,
+              0.11784511784511785
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 3.6677966101694914,
+            "ci95": [
+              3.3595890410958904,
+              3.9933110367892977
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 522.0372881355933,
+            "ci95": [
+              516.6338983050847,
+              527.0338983050848
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 4.905093559322031,
+            "ci95": [
+              4.890665068493146,
+              4.9213164383561585
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.08396946564885496,
+            "ci95": [
+              0.04132231404958678,
+              0.13178294573643412
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.1111111111111111,
+            "ci95": [
+              0.06707317073170732,
+              0.1569767441860465
+            ],
+            "n": 171
+          },
+          "model_accepted": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "template_fallback": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "multiple_questions": {
+            "mean": 0.8406779661016949,
+            "ci95": [
+              0.7945205479452054,
+              0.8821548821548821
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.96,
+              "ci95": [
+                0.92,
+                0.99
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 0.97,
+              "ci95": [
+                0.93,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.12,
+              "ci95": [
+                0.06,
+                0.19
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.9183673469387755,
+              "ci95": [
+                0.8571428571428571,
+                0.9693877551020408
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 0.9183673469387755,
+              "ci95": [
+                0.8571428571428571,
+                0.9693877551020408
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.14285714285714285,
+              "ci95": [
+                0.08163265306122448,
+                0.21428571428571427
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.7628865979381443,
+              "ci95": [
+                0.6804123711340206,
+                0.845360824742268
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 0.9175257731958762,
+              "ci95": [
+                0.8556701030927835,
+                0.9690721649484536
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 6,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 5,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 1,
+            "n": 5
+          },
+          "model_emergency_recall": 0.6,
+          "model_under_triage_rate": 0.4
+        },
+        "information_completeness": {
+          "mean": 0.22102564102564107,
+          "ci95": [
+            0.15589743589743588,
+            0.2902564102564103
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      },
+      "E3_pilot_lora-rescored-dialogue-metrics-v4": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.8711864406779661,
+            "ci95": [
+              0.8299319727891157,
+              0.9084745762711864
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 0.9254237288135593,
+            "ci95": [
+              0.8938356164383562,
+              0.956081081081081
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.22033898305084745,
+            "ci95": [
+              0.16891891891891891,
+              0.2789115646258503
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.14129943502824863,
+            "ci95": [
+              0.1058361391694725,
+              0.1818693693693694
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.08901072124756335,
+            "ci95": [
+              0.06096618357487922,
+              0.11945606694560675
+            ],
+            "n": 228
+          },
+          "over_question_limit": {
+            "mean": 0.6779661016949152,
+            "ci95": [
+              0.6195286195286195,
+              0.7322033898305085
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.1016949152542373,
+            "ci95": [
+              0.0684931506849315,
+              0.13851351351351351
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.003389830508474576,
+            "ci95": [
+              0.0,
+              0.010273972602739725
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 3.301694915254237,
+            "ci95": [
+              3.0374149659863945,
+              3.6040268456375837
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 517.0915254237289,
+            "ci95": [
+              512.578231292517,
+              521.7162162162163
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 3.812389152542377,
+            "ci95": [
+              3.7487023809523863,
+              3.872643097643098
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.08396946564885496,
+            "ci95": [
+              0.03676470588235294,
+              0.1386861313868613
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.14285714285714285,
+            "ci95": [
+              0.09090909090909091,
+              0.2
+            ],
+            "n": 154
+          },
+          "model_accepted": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "template_fallback": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "multiple_questions": {
+            "mean": 0.8271186440677966,
+            "ci95": [
+              0.7818791946308725,
+              0.8707482993197279
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.94,
+              "ci95": [
+                0.89,
+                0.98
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 0.97,
+              "ci95": [
+                0.93,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.14,
+              "ci95": [
+                0.08,
+                0.21
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.8979591836734694,
+              "ci95": [
+                0.8367346938775511,
+                0.9489795918367347
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 0.9183673469387755,
+              "ci95": [
+                0.8571428571428571,
+                0.9693877551020408
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.16326530612244897,
+              "ci95": [
+                0.09183673469387756,
+                0.24489795918367346
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.7731958762886598,
+              "ci95": [
+                0.6907216494845361,
+                0.8556701030927835
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 0.8865979381443299,
+              "ci95": [
+                0.8144329896907216,
+                0.9484536082474226
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 4,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 5,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 1,
+            "n": 5
+          },
+          "model_emergency_recall": 0.4,
+          "model_under_triage_rate": 0.6
+        },
+        "information_completeness": {
+          "mean": 0.1907692307692308,
+          "ci95": [
+            0.1305128205128205,
+            0.2535897435897437
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0030864197530864196,
+          "n": 324
+        }
+      },
+      "release_20261031_E4": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.43728813559322033,
+            "ci95": [
+              0.36486486486486486,
+              0.5101351351351351
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.42033898305084744,
+            "ci95": [
+              0.35084745762711866,
+              0.4931972789115646
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.05022026431718061,
+            "ci95": [
+              0.027753303964757704,
+              0.07344632768361581
+            ],
+            "n": 227
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 72.84745762711864,
+            "ci95": [
+              69.6891891891892,
+              75.78620689655172
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 0.04333016949152542,
+            "ci95": [
+              0.04062629757785466,
+              0.04587003367003367
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.9847328244274809,
+            "ci95": [
+              0.9508196721311475,
+              1.0
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 129
+          },
+          "model_accepted": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "template_fallback": {
+            "mean": null,
+            "ci95": [
+              null,
+              null
+            ],
+            "n": 0
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.22871794871794873,
+          "ci95": [
+            0.16974358974358972,
+            0.2966666666666667
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      },
+      "release_20261031_E5A": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.423728813559322,
+            "ci95": [
+              0.3547297297297297,
+              0.494949494949495
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.4067796610169492,
+            "ci95": [
+              0.33793103448275863,
+              0.4811643835616438
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.04866071428571428,
+            "ci95": [
+              0.025545171339563865,
+              0.07378787878787879
+            ],
+            "n": 224
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 83.70508474576272,
+            "ci95": [
+              77.39864864864865,
+              90.49328859060402
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 0.8450277966101696,
+            "ci95": [
+              0.7816190476190485,
+              0.9163305084745769
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.9541984732824428,
+            "ci95": [
+              0.907563025210084,
+              0.9857142857142858
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 125
+          },
+          "model_accepted": {
+            "mean": 0.8778625954198473,
+            "ci95": [
+              0.8,
+              0.943089430894309
+            ],
+            "n": 131
+          },
+          "template_fallback": {
+            "mean": 0.12213740458015267,
+            "ci95": [
+              0.056910569105691054,
+              0.2
+            ],
+            "n": 131
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.22358974358974362,
+          "ci95": [
+            0.1641025641025641,
+            0.2935897435897435
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      },
+      "release_20261031_E5B": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.43389830508474575,
+            "ci95": [
+              0.3614864864864865,
+              0.5068493150684932
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.41694915254237286,
+            "ci95": [
+              0.34628378378378377,
+              0.49312714776632305
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.05022026431718061,
+            "ci95": [
+              0.027753303964757704,
+              0.07344632768361581
+            ],
+            "n": 227
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 84.7728813559322,
+            "ci95": [
+              78.65986394557824,
+              91.46779661016949
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 1.4492545762711864,
+            "ci95": [
+              1.3203105802047792,
+              1.583790378006873
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.9770992366412213,
+            "ci95": [
+              0.9375,
+              1.0
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 128
+          },
+          "model_accepted": {
+            "mean": 0.8625954198473282,
+            "ci95": [
+              0.7829457364341085,
+              0.9323308270676691
+            ],
+            "n": 131
+          },
+          "template_fallback": {
+            "mean": 0.13740458015267176,
+            "ci95": [
+              0.06766917293233082,
+              0.21804511278195488
+            ],
+            "n": 131
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.22487179487179487,
+          "ci95": [
+            0.16564102564102562,
+            0.2948717948717949
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      },
+      "release_20261031_E5C": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.3593220338983051,
+            "ci95": [
+              0.2983050847457627,
+              0.42662116040955633
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.3423728813559322,
+            "ci95": [
+              0.28135593220338984,
+              0.4074074074074074
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.04469696969696969,
+            "ci95": [
+              0.021806853582554516,
+              0.06845238095238095
+            ],
+            "n": 220
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 85.5864406779661,
+            "ci95": [
+              79.63389830508474,
+              92.20134228187919
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 1.4921976271186441,
+            "ci95": [
+              1.3668790540540543,
+              1.6283238907849837
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.8015267175572519,
+            "ci95": [
+              0.7251908396946565,
+              0.8759124087591241
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 106
+          },
+          "model_accepted": {
+            "mean": 0.4732824427480916,
+            "ci95": [
+              0.3712121212121212,
+              0.5714285714285714
+            ],
+            "n": 131
+          },
+          "template_fallback": {
+            "mean": 0.5267175572519084,
+            "ci95": [
+              0.42857142857142855,
+              0.6287878787878788
+            ],
+            "n": 131
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.21974358974358976,
+          "ci95": [
+            0.16076923076923072,
+            0.28615384615384615
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      }
+    },
+    "paired": {
+      "E2_pilot_lora-rescored-dialogue-metrics-v4": {
+        "target_slot_hit": {
+          "diff": 0.06870229007633588,
+          "ci95": [
+            0.015384615384615385,
+            0.12213740458015267
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": 0.07407407407407407,
+          "ci95": [
+            -0.06896551724137931,
+            0.23076923076923078
+          ],
+          "n": 27,
+          "conversations": 26
+        },
+        "model_accepted": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "template_fallback": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "multiple_questions": {
+          "diff": 0.6203389830508474,
+          "ci95": [
+            0.5570469798657718,
+            0.6789297658862876
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": 3.0338983050847457,
+          "ci95": [
+            2.707482993197279,
+            3.377551020408163
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.5830508474576271,
+          "ci95": [
+            0.5185185185185185,
+            0.6397306397306397
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": -0.061016949152542375,
+          "ci95": [
+            -0.09121621621621621,
+            -0.03355704697986577
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.18305084745762712,
+          "ci95": [
+            0.1292517006802721,
+            0.23986486486486486
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.12819209039548024,
+          "ci95": [
+            0.08435374149659862,
+            0.17505592841163312
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.10716873706004142,
+          "ci95": [
+            0.063265306122449,
+            0.15378787878787878
+          ],
+          "n": 184,
+          "conversations": 95
+        },
+        "premature_diagnosis": {
+          "diff": -0.3525423728813559,
+          "ci95": [
+            -0.4061433447098976,
+            -0.2986577181208054
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": 0.6372881355932203,
+          "ci95": [
+            0.5665529010238908,
+            0.7070707070707071
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": -0.006779661016949152,
+          "ci95": [
+            -0.01694915254237288,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      },
+      "E3_pilot_lora-rescored-dialogue-metrics-v4": {
+        "target_slot_hit": {
+          "diff": 0.06870229007633588,
+          "ci95": [
+            0.015037593984962405,
+            0.12698412698412698
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": 0.06666666666666667,
+          "ci95": [
+            -0.06451612903225806,
+            0.2
+          ],
+          "n": 30,
+          "conversations": 28
+        },
+        "model_accepted": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "template_fallback": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "multiple_questions": {
+          "diff": 0.6067796610169491,
+          "ci95": [
+            0.543918918918919,
+            0.6722972972972973
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": 2.6677966101694914,
+          "ci95": [
+            2.3732876712328768,
+            2.9662162162162162
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.5728813559322034,
+          "ci95": [
+            0.5067114093959731,
+            0.6351351351351351
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": -0.0711864406779661,
+          "ci95": [
+            -0.10437710437710437,
+            -0.04067796610169491
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.15254237288135594,
+          "ci95": [
+            0.10135135135135136,
+            0.20677966101694914
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.09158192090395481,
+          "ci95": [
+            0.052901023890784986,
+            0.13029782359679265
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.06524943310657595,
+          "ci95": [
+            0.02793650793650795,
+            0.10701754385964915
+          ],
+          "n": 182,
+          "conversations": 95
+        },
+        "premature_diagnosis": {
+          "diff": -0.3389830508474576,
+          "ci95": [
+            -0.3952702702702703,
+            -0.28135593220338984
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": 0.5932203389830508,
+          "ci95": [
+            0.5254237288135594,
+            0.6587837837837838
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": -0.003389830508474576,
+          "ci95": [
+            -0.013651877133105802,
+            0.006825938566552901
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      },
+      "release_20261031_E4": {
+        "target_slot_hit": {
+          "diff": 0.9694656488549618,
+          "ci95": [
+            0.928,
+            1.0
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": -0.06666666666666667,
+          "ci95": [
+            -0.2,
+            0.0
+          ],
+          "n": 15,
+          "conversations": 15
+        },
+        "model_accepted": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "template_fallback": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "multiple_questions": {
+          "diff": -0.22033898305084745,
+          "ci95": [
+            -0.2702702702702703,
+            -0.17567567567567569
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": -0.18983050847457628,
+          "ci95": [
+            -0.3333333333333333,
+            -0.06440677966101695
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.14576271186440679,
+          "ci95": [
+            0.0576271186440678,
+            0.22895622895622897
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": 0.003389830508474576,
+          "ci95": [
+            0.0,
+            0.01020408163265306
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.3694915254237288,
+          "ci95": [
+            0.2857142857142857,
+            0.44594594594594594
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.3706214689265537,
+          "ci95": [
+            0.29553264604811,
+            0.444636678200692
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.01674692348849653,
+          "ci95": [
+            -0.02332798287854468,
+            0.0573905862923204
+          ],
+          "n": 178,
+          "conversations": 95
+        },
+        "premature_diagnosis": {
+          "diff": -0.4406779661016949,
+          "ci95": [
+            -0.4897260273972603,
+            -0.3898305084745763
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": -0.0847457627118644,
+          "ci95": [
+            -0.11486486486486487,
+            -0.057432432432432436
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": -0.006779661016949152,
+          "ci95": [
+            -0.01694915254237288,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      },
+      "release_20261031_E5A": {
+        "target_slot_hit": {
+          "diff": 0.9389312977099237,
+          "ci95": [
+            0.8840579710144928,
+            0.9838709677419355
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": -0.06666666666666667,
+          "ci95": [
+            -0.2,
+            0.0
+          ],
+          "n": 15,
+          "conversations": 15
+        },
+        "model_accepted": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "template_fallback": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "multiple_questions": {
+          "diff": -0.22033898305084745,
+          "ci95": [
+            -0.2702702702702703,
+            -0.17567567567567569
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": -0.18983050847457628,
+          "ci95": [
+            -0.3333333333333333,
+            -0.06440677966101695
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.14576271186440679,
+          "ci95": [
+            0.0576271186440678,
+            0.22895622895622897
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": 0.003389830508474576,
+          "ci95": [
+            0.0,
+            0.01020408163265306
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.3559322033898305,
+          "ci95": [
+            0.27424749163879597,
+            0.43197278911564624
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.35706214689265536,
+          "ci95": [
+            0.28231292517006806,
+            0.43117178612059154
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.01393793472445158,
+          "ci95": [
+            -0.02620320855614973,
+            0.0538069773363891
+          ],
+          "n": 178,
+          "conversations": 95
+        },
+        "premature_diagnosis": {
+          "diff": -0.4406779661016949,
+          "ci95": [
+            -0.4897260273972603,
+            -0.3898305084745763
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": -0.0847457627118644,
+          "ci95": [
+            -0.11486486486486487,
+            -0.057432432432432436
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": -0.006779661016949152,
+          "ci95": [
+            -0.01694915254237288,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      },
+      "release_20261031_E5B": {
+        "target_slot_hit": {
+          "diff": 0.9618320610687023,
+          "ci95": [
+            0.917910447761194,
+            0.9926470588235294
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": -0.06666666666666667,
+          "ci95": [
+            -0.2,
+            0.0
+          ],
+          "n": 15,
+          "conversations": 15
+        },
+        "model_accepted": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "template_fallback": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "multiple_questions": {
+          "diff": -0.22033898305084745,
+          "ci95": [
+            -0.2702702702702703,
+            -0.17567567567567569
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": -0.18983050847457628,
+          "ci95": [
+            -0.3333333333333333,
+            -0.06440677966101695
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.14576271186440679,
+          "ci95": [
+            0.0576271186440678,
+            0.22895622895622897
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": 0.003389830508474576,
+          "ci95": [
+            0.0,
+            0.01020408163265306
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.36610169491525424,
+          "ci95": [
+            0.28187919463087246,
+            0.44256756756756754
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.3672316384180791,
+          "ci95": [
+            0.2922297297297297,
+            0.44256756756756754
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.01674692348849653,
+          "ci95": [
+            -0.02332798287854468,
+            0.0573905862923204
+          ],
+          "n": 178,
+          "conversations": 95
+        },
+        "premature_diagnosis": {
+          "diff": -0.4406779661016949,
+          "ci95": [
+            -0.4897260273972603,
+            -0.3898305084745763
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": -0.0847457627118644,
+          "ci95": [
+            -0.11486486486486487,
+            -0.057432432432432436
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": -0.006779661016949152,
+          "ci95": [
+            -0.01694915254237288,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      },
+      "release_20261031_E5C": {
+        "target_slot_hit": {
+          "diff": 0.7862595419847328,
+          "ci95": [
+            0.7037037037037037,
+            0.8650793650793651
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": -0.07692307692307693,
+          "ci95": [
+            -0.23076923076923078,
+            0.0
+          ],
+          "n": 13,
+          "conversations": 13
+        },
+        "model_accepted": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "template_fallback": {
+          "diff": null,
+          "ci95": [
+            null,
+            null
+          ],
+          "n": 0
+        },
+        "multiple_questions": {
+          "diff": -0.22033898305084745,
+          "ci95": [
+            -0.2702702702702703,
+            -0.17567567567567569
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": -0.18983050847457628,
+          "ci95": [
+            -0.3333333333333333,
+            -0.06440677966101695
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.14576271186440679,
+          "ci95": [
+            0.0576271186440678,
+            0.22895622895622897
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": 0.003389830508474576,
+          "ci95": [
+            0.0,
+            0.01020408163265306
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.29152542372881357,
+          "ci95": [
+            0.22,
+            0.3602693602693603
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.2926553672316384,
+          "ci95": [
+            0.22485875706214692,
+            0.3603603603603604
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.007945425361155696,
+          "ci95": [
+            -0.031339977851605756,
+            0.046951219512195115
+          ],
+          "n": 178,
+          "conversations": 95
+        },
+        "premature_diagnosis": {
+          "diff": -0.4406779661016949,
+          "ci95": [
+            -0.4897260273972603,
+            -0.3898305084745763
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": -0.0847457627118644,
+          "ci95": [
+            -0.11486486486486487,
+            -0.057432432432432436
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": -0.006779661016949152,
+          "ci95": [
+            -0.01694915254237288,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      }
+    }
+  },
+  "closed_loop": {
+    "method": "fixed_profile_simulator_not_expert_evaluation",
+    "cases": 107,
+    "mean_questions": 3.0,
+    "complete_information_rate": 0.897196261682243,
+    "repeated_questions": 0,
+    "off_target_questions": 0,
+    "emergency_recall": 1.0,
+    "expert_hypothesis_quality": null,
+    "rows": [
+      {
+        "case_id": "sim-0-0",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-1",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-2",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-3",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-4",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-5",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-6",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-7",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-8",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-9",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-10",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-11",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-0-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "location",
+          "severity",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-0",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-1",
+        "n_questions": 3,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-2",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-3",
+        "n_questions": 3,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-4",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-5",
+        "n_questions": 3,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-6",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-7",
+        "n_questions": 3,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-8",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-9",
+        "n_questions": 3,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-10",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-11",
+        "n_questions": 3,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-1-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "location",
+          "severity",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-0",
+        "n_questions": 2,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-1",
+        "n_questions": 1,
+        "asked_slots": [
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-2",
+        "n_questions": 2,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-3",
+        "n_questions": 1,
+        "asked_slots": [
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-4",
+        "n_questions": 2,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-5",
+        "n_questions": 1,
+        "asked_slots": [
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-6",
+        "n_questions": 2,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-7",
+        "n_questions": 1,
+        "asked_slots": [
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-8",
+        "n_questions": 2,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-9",
+        "n_questions": 1,
+        "asked_slots": [
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-10",
+        "n_questions": 2,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-11",
+        "n_questions": 1,
+        "asked_slots": [
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-2-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-0",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-1",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-2",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-3",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-4",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-5",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-6",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-7",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-8",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-9",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-10",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-11",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "associated_symptoms",
+          "severity"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-3-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "severity",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-0",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-1",
+        "n_questions": 2,
+        "asked_slots": [
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-2",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-3",
+        "n_questions": 2,
+        "asked_slots": [
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-4",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-5",
+        "n_questions": 2,
+        "asked_slots": [
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-6",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-7",
+        "n_questions": 2,
+        "asked_slots": [
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-8",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-9",
+        "n_questions": 2,
+        "asked_slots": [
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-10",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-11",
+        "n_questions": 2,
+        "asked_slots": [
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-4-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-0",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-1",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-2",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-3",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-4",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-5",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-6",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-7",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-8",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-9",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-10",
+        "n_questions": 4,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-11",
+        "n_questions": 3,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers",
+          "location"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 3,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-5-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "location",
+          "triggers",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-0",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-1",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-2",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-3",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-4",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-5",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-6",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-7",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-8",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-9",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-10",
+        "n_questions": 5,
+        "asked_slots": [
+          "timing",
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-11",
+        "n_questions": 4,
+        "asked_slots": [
+          "location",
+          "red_flag_screen",
+          "severity",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 4,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-6-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "location",
+          "severity",
+          "triggers",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-0",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-1",
+        "n_questions": 2,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-2",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-3",
+        "n_questions": 2,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-4",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-5",
+        "n_questions": 2,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-6",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-7",
+        "n_questions": 2,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-8",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-9",
+        "n_questions": 2,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-10",
+        "n_questions": 3,
+        "asked_slots": [
+          "timing",
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-11",
+        "n_questions": 2,
+        "asked_slots": [
+          "red_flag_screen",
+          "triggers"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": true,
+        "remaining_core_slots": [],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": true,
+        "candidate_count": 0,
+        "summary_findings": 2,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "sim-7-12",
+        "n_questions": 1,
+        "asked_slots": [
+          "timing"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "triggers",
+          "associated_symptoms",
+          "red_flag_screen"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "new-chest-pain",
+        "n_questions": 0,
+        "asked_slots": [],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "chief_complaint"
+        ],
+        "stopped": true,
+        "emergency_detected": true,
+        "expected_emergency": true,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "relative-dyspnea",
+        "n_questions": 0,
+        "asked_slots": [],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "timing",
+          "severity",
+          "associated_symptoms"
+        ],
+        "stopped": true,
+        "emergency_detected": true,
+        "expected_emergency": true,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 1,
+        "expert_hypothesis_quality": null
+      },
+      {
+        "case_id": "uncertain",
+        "n_questions": 1,
+        "asked_slots": [
+          "chief_complaint"
+        ],
+        "repeated_questions": 0,
+        "off_target_questions": 0,
+        "collected_core_information": false,
+        "remaining_core_slots": [
+          "chief_complaint"
+        ],
+        "stopped": true,
+        "emergency_detected": false,
+        "expected_emergency": false,
+        "assessment_eligible": false,
+        "candidate_count": 0,
+        "summary_findings": 0,
+        "expert_hypothesis_quality": null
+      }
+    ],
+    "generator": "planner"
+  },
+  "safety": {
+    "case_count": 90,
+    "emergency_recall": 1.0,
+    "false_positive_rate": 0.0,
+    "passed": true,
+    "failures": [],
+    "note": "Development regression cases only. Not a clinical validation estimate."
+  },
+  "dst": {
+    "annotation": "developer-annotated development set; NOT clinician-verified; labels reflect intended meaning, not extractor output",
+    "cases": 25,
+    "symptom_extraction_present": {
+      "precision": 0.9762,
+      "recall": 0.9762,
+      "f1": 0.9762,
+      "tp": 41,
+      "fp": 1,
+      "fn": 1
+    },
+    "symptom_extraction_negated": {
+      "precision": 0.9,
+      "recall": 1.0,
+      "f1": 0.9474,
+      "tp": 9,
+      "fp": 1,
+      "fn": 0
+    },
+    "chief_complaint_accuracy": 0.92,
+    "subject_accuracy": 1.0,
+    "state_slot_accuracy": 0.96,
+    "slot_decisions": 150,
+    "failures": [
+      {
+        "id": "d07",
+        "negated": {
+          "predicted": [
+            "dau_lung",
+            "sot"
+          ],
+          "gold": [
+            "sot"
+          ]
+        }
+      },
+      {
+        "id": "d08",
+        "slots": [
+          {
+            "slot": "location",
+            "predicted_filled": false,
+            "gold_filled": true
+          }
+        ]
+      },
+      {
+        "id": "d10",
+        "slots": [
+          {
+            "slot": "location",
+            "predicted_filled": true,
+            "gold_filled": false
+          }
+        ]
+      },
+      {
+        "id": "d13",
+        "slots": [
+          {
+            "slot": "timing",
+            "predicted_filled": false,
+            "gold_filled": true
+          }
+        ]
+      },
+      {
+        "id": "d18",
+        "slots": [
+          {
+            "slot": "timing",
+            "predicted_filled": false,
+            "gold_filled": true
+          }
+        ]
+      },
+      {
+        "id": "d19",
+        "present": {
+          "predicted": [
+            "dau_mat",
+            "ngua"
+          ],
+          "gold": [
+            "dau_mat"
+          ]
+        },
+        "chief": {
+          "predicted": "ngua",
+          "gold": "dau_mat"
+        }
+      },
+      {
+        "id": "d20",
+        "slots": [
+          {
+            "slot": "relevant_history",
+            "predicted_filled": false,
+            "gold_filled": true
+          }
+        ]
+      },
+      {
+        "id": "d23",
+        "slots": [
+          {
+            "slot": "timing",
+            "predicted_filled": false,
+            "gold_filled": true
+          }
+        ]
+      },
+      {
+        "id": "d24",
+        "present": {
+          "predicted": [],
+          "gold": [
+            "dau_rang"
+          ]
+        },
+        "chief": {
+          "predicted": null,
+          "gold": "dau_rang"
+        }
+      }
+    ]
+  },
+  "errors": {
+    "E1_base-rescored-dialogue-metrics-v4": {},
+    "E2_pilot_lora-rescored-dialogue-metrics-v4": {},
+    "E3_pilot_lora-rescored-dialogue-metrics-v4": {},
+    "release_20261031_E4": {},
+    "release_20261031_E5A": {
+      "condition_naming": 13,
+      "multiple_slots": 2,
+      "off_target": 1
+    },
+    "release_20261031_E5B": {
+      "condition_naming": 12,
+      "multiple_slots": 2,
+      "off_target": 5,
+      "extra_content": 2,
+      "multiple_questions": 1,
+      "premature_diagnosis": 1
+    },
+    "release_20261031_E5C": {
+      "off_target": 59,
+      "condition_naming": 12,
+      "extra_content": 24,
+      "multiple_slots": 6,
+      "premature_diagnosis": 3,
+      "no_question": 9,
+      "unreported_symptom": 1,
+      "multiple_questions": 2
+    }
+  },
+  "software": {
+    "python": "3.11.15 (main, Jun 11 2026, 04:59:07) [MSC v.1944 64 bit (AMD64)]",
+    "torch": "2.13.0+cu130",
+    "transformers": "4.57.6",
+    "peft": "0.20.0",
+    "trl": "0.29.1",
+    "datasets": "4.8.5",
+    "accelerate": "1.14.0",
+    "fastapi": "0.141.1",
+    "pydantic": "2.13.4",
+    "pytest": "9.1.1",
+    "wandb": "0.31.0"
+  },
+  "adapter_sha256": {
+    "models/pilot_E2/final_adapter": {
+      "adapter_config.json": "bd118f36b8ab5a306b824e56ca0abe010b8dae96415e9b1200b6096b15f4a19c",
+      "adapter_model.safetensors": "cc2a175f37e77f3e261b7c1dfc57e96ec00855202dde8d5c29cbe136f810976b"
+    },
+    "models/pilot_E3/final_adapter": {
+      "adapter_config.json": "0d3f360cb8840dcccf8d3bd39997918878399b23c24b6ce7b9bf29111830b4ee",
+      "adapter_model.safetensors": "72ee3866d785bd64634a566c8fbc0a9969015ebfe83bf1924401c2f588475a6e"
+    },
+    "models/E5C_pilot_20261031/final_adapter": {
+      "adapter_config.json": "cfedbec6b776a459b7d55866113fa9fdd6d9cf2db047a20ef25ed5c5a3b7cc2e",
+      "adapter_model.safetensors": "a100dc5122a5f139d83c80c29259b4e67d35d364b72b442abceb4b1d58aa3836"
+    }
+  },
+  "guided_comparison": {
+    "runs": [
+      "release_20261031_E5A",
+      "release_20261031_E5B",
+      "release_20261031_E5C"
+    ],
+    "baseline": "release_20261031_E5A",
+    "metrics": {
+      "release_20261031_E5A": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.423728813559322,
+            "ci95": [
+              0.3547297297297297,
+              0.494949494949495
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.4067796610169492,
+            "ci95": [
+              0.33793103448275863,
+              0.4811643835616438
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.04866071428571428,
+            "ci95": [
+              0.025545171339563865,
+              0.07378787878787879
+            ],
+            "n": 224
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 83.70508474576272,
+            "ci95": [
+              77.39864864864865,
+              90.49328859060402
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 0.8450277966101696,
+            "ci95": [
+              0.7816190476190485,
+              0.9163305084745769
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.9541984732824428,
+            "ci95": [
+              0.907563025210084,
+              0.9857142857142858
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 125
+          },
+          "model_accepted": {
+            "mean": 0.8778625954198473,
+            "ci95": [
+              0.8,
+              0.943089430894309
+            ],
+            "n": 131
+          },
+          "template_fallback": {
+            "mean": 0.12213740458015267,
+            "ci95": [
+              0.056910569105691054,
+              0.2
+            ],
+            "n": 131
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.22358974358974362,
+          "ci95": [
+            0.1641025641025641,
+            0.2935897435897435
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      },
+      "release_20261031_E5B": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.43389830508474575,
+            "ci95": [
+              0.3614864864864865,
+              0.5068493150684932
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.41694915254237286,
+            "ci95": [
+              0.34628378378378377,
+              0.49312714776632305
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.05022026431718061,
+            "ci95": [
+              0.027753303964757704,
+              0.07344632768361581
+            ],
+            "n": 227
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 84.7728813559322,
+            "ci95": [
+              78.65986394557824,
+              91.46779661016949
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 1.4492545762711864,
+            "ci95": [
+              1.3203105802047792,
+              1.583790378006873
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.9770992366412213,
+            "ci95": [
+              0.9375,
+              1.0
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 128
+          },
+          "model_accepted": {
+            "mean": 0.8625954198473282,
+            "ci95": [
+              0.7829457364341085,
+              0.9323308270676691
+            ],
+            "n": 131
+          },
+          "template_fallback": {
+            "mean": 0.13740458015267176,
+            "ci95": [
+              0.06766917293233082,
+              0.21804511278195488
+            ],
+            "n": 131
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.22487179487179487,
+          "ci95": [
+            0.16564102564102562,
+            0.2948717948717949
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      },
+      "release_20261031_E5C": {
+        "question_generation": {
+          "asks_question": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "non_redundant": {
+            "mean": 1.0,
+            "ci95": [
+              1.0,
+              1.0
+            ],
+            "n": 295
+          },
+          "targets_missing": {
+            "mean": 0.3593220338983051,
+            "ci95": [
+              0.2983050847457627,
+              0.42662116040955633
+            ],
+            "n": 295
+          },
+          "relevance": {
+            "mean": 0.3423728813559322,
+            "ci95": [
+              0.28135593220338984,
+              0.4074074074074074
+            ],
+            "n": 295
+          },
+          "reference_slot_f1": {
+            "mean": 0.04469696969696969,
+            "ci95": [
+              0.021806853582554516,
+              0.06845238095238095
+            ],
+            "n": 220
+          },
+          "over_question_limit": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "premature_diagnosis": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "unsafe": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          },
+          "n_questions": {
+            "mean": 0.4440677966101695,
+            "ci95": [
+              0.37373737373737376,
+              0.5136054421768708
+            ],
+            "n": 295
+          },
+          "chars": {
+            "mean": 85.5864406779661,
+            "ci95": [
+              79.63389830508474,
+              92.20134228187919
+            ],
+            "n": 295
+          },
+          "latency_seconds": {
+            "mean": 1.4921976271186441,
+            "ci95": [
+              1.3668790540540543,
+              1.6283238907849837
+            ],
+            "n": 295
+          },
+          "target_slot_hit": {
+            "mean": 0.8015267175572519,
+            "ci95": [
+              0.7251908396946565,
+              0.8759124087591241
+            ],
+            "n": 131
+          },
+          "repeated_information_rate": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 106
+          },
+          "model_accepted": {
+            "mean": 0.4732824427480916,
+            "ci95": [
+              0.3712121212121212,
+              0.5714285714285714
+            ],
+            "n": 131
+          },
+          "template_fallback": {
+            "mean": 0.5267175572519084,
+            "ci95": [
+              0.42857142857142855,
+              0.6287878787878788
+            ],
+            "n": 131
+          },
+          "multiple_questions": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 295
+          }
+        },
+        "by_turn": {
+          "1": {
+            "asks_question": {
+              "mean": 0.35,
+              "ci95": [
+                0.26,
+                0.44
+              ],
+              "n": 100
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 100
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 100
+            }
+          },
+          "2": {
+            "asks_question": {
+              "mean": 0.4897959183673469,
+              "ci95": [
+                0.3877551020408163,
+                0.5918367346938775
+              ],
+              "n": 98
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 98
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 98
+            }
+          },
+          "3": {
+            "asks_question": {
+              "mean": 0.4948453608247423,
+              "ci95": [
+                0.3917525773195876,
+                0.5979381443298969
+              ],
+              "n": 97
+            },
+            "non_redundant": {
+              "mean": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 97
+            },
+            "premature_diagnosis": {
+              "mean": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ],
+              "n": 97
+            }
+          }
+        },
+        "behavior": {
+          "emergency": {
+            "passed": 10,
+            "n": 10
+          },
+          "injection": {
+            "passed": 4,
+            "n": 4
+          },
+          "insufficient_information": {
+            "passed": 6,
+            "n": 6
+          },
+          "knowledge": {
+            "passed": 4,
+            "n": 4
+          },
+          "out_of_domain": {
+            "passed": 5,
+            "n": 5
+          },
+          "model_emergency_recall": 1.0,
+          "model_under_triage_rate": 0.0
+        },
+        "information_completeness": {
+          "mean": 0.21974358974358976,
+          "ci95": [
+            0.16076923076923072,
+            0.28615384615384615
+          ],
+          "n": 65
+        },
+        "unsafe_response_rate": {
+          "mean": 0.0,
+          "n": 324
+        }
+      }
+    },
+    "paired": {
+      "release_20261031_E5B": {
+        "target_slot_hit": {
+          "diff": 0.022900763358778626,
+          "ci95": [
+            -0.007751937984496124,
+            0.056451612903225805
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 124,
+          "conversations": 66
+        },
+        "model_accepted": {
+          "diff": -0.015267175572519083,
+          "ci95": [
+            -0.06923076923076923,
+            0.0364963503649635
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "template_fallback": {
+          "diff": 0.015267175572519083,
+          "ci95": [
+            -0.0364963503649635,
+            0.06923076923076923
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "multiple_questions": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": 0.010169491525423728,
+          "ci95": [
+            -0.003389830508474576,
+            0.026755852842809364
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": 0.010169491525423728,
+          "ci95": [
+            -0.003389830508474576,
+            0.026755852842809364
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": 0.002232142857142857,
+          "ci95": [
+            0.0,
+            0.007009345794392523
+          ],
+          "n": 224,
+          "conversations": 99
+        },
+        "premature_diagnosis": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      },
+      "release_20261031_E5C": {
+        "target_slot_hit": {
+          "diff": -0.15267175572519084,
+          "ci95": [
+            -0.232,
+            -0.07575757575757576
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "repeated_information_rate": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 103,
+          "conversations": 61
+        },
+        "model_accepted": {
+          "diff": -0.40458015267175573,
+          "ci95": [
+            -0.5314685314685315,
+            -0.27205882352941174
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "template_fallback": {
+          "diff": 0.40458015267175573,
+          "ci95": [
+            0.27205882352941174,
+            0.5314685314685315
+          ],
+          "n": 131,
+          "conversations": 69
+        },
+        "multiple_questions": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "n_questions": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "asks_question": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "non_redundant": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "targets_missing": {
+          "diff": -0.06440677966101695,
+          "ci95": [
+            -0.10344827586206896,
+            -0.027303754266211604
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "relevance": {
+          "diff": -0.06440677966101695,
+          "ci95": [
+            -0.10553633217993079,
+            -0.02702702702702703
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "reference_slot_f1": {
+          "diff": -0.004892966360856268,
+          "ci95": [
+            -0.015207373271889398,
+            0.004366812227074236
+          ],
+          "n": 218,
+          "conversations": 99
+        },
+        "premature_diagnosis": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "over_question_limit": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        },
+        "unsafe": {
+          "diff": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 295,
+          "conversations": 100
+        }
+      }
+    }
+  },
+  "planner_base_validation_loss": {
+    "model": "Qwen/Qwen3-1.7B",
+    "adapter": null,
+    "conversations": 32,
+    "windows": 31,
+    "eval_loss": 3.294268415820214
+  },
+  "paired_closed_loop": [
+    {
+      "method": "fixed_profile_simulator_not_expert_evaluation",
+      "cases": 11,
+      "mean_questions": 2.8181818181818183,
+      "complete_information_rate": 0.7272727272727273,
+      "repeated_questions": 0,
+      "off_target_questions": 0,
+      "emergency_recall": 1.0,
+      "expert_hypothesis_quality": null,
+      "rows": [
+        {
+          "case_id": "sim-0-0",
+          "n_questions": 5,
+          "asked_slots": [
+            "timing",
+            "location",
+            "red_flag_screen",
+            "associated_symptoms",
+            "severity"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 4,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-1-0",
+          "n_questions": 4,
+          "asked_slots": [
+            "timing",
+            "location",
+            "red_flag_screen",
+            "severity"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 4,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-2-0",
+          "n_questions": 2,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 2,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-3-0",
+          "n_questions": 4,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen",
+            "associated_symptoms",
+            "severity"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 3,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-4-0",
+          "n_questions": 3,
+          "asked_slots": [
+            "timing",
+            "associated_symptoms",
+            "red_flag_screen"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 3,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-5-0",
+          "n_questions": 4,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen",
+            "triggers",
+            "location"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 3,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-6-0",
+          "n_questions": 5,
+          "asked_slots": [
+            "timing",
+            "location",
+            "red_flag_screen",
+            "severity",
+            "triggers"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 4,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-7-0",
+          "n_questions": 3,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen",
+            "triggers"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 2,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "new-chest-pain",
+          "n_questions": 0,
+          "asked_slots": [],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": false,
+          "remaining_core_slots": [
+            "chief_complaint"
+          ],
+          "stopped": true,
+          "emergency_detected": true,
+          "expected_emergency": true,
+          "assessment_eligible": false,
+          "candidate_count": 0,
+          "summary_findings": 1,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "relative-dyspnea",
+          "n_questions": 0,
+          "asked_slots": [],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": false,
+          "remaining_core_slots": [
+            "timing",
+            "severity",
+            "associated_symptoms"
+          ],
+          "stopped": true,
+          "emergency_detected": true,
+          "expected_emergency": true,
+          "assessment_eligible": false,
+          "candidate_count": 0,
+          "summary_findings": 1,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "uncertain",
+          "n_questions": 1,
+          "asked_slots": [
+            "chief_complaint"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": false,
+          "remaining_core_slots": [
+            "chief_complaint"
+          ],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": false,
+          "candidate_count": 0,
+          "summary_findings": 0,
+          "expert_hypothesis_quality": null
+        }
+      ],
+      "generator": "planner"
+    },
+    {
+      "method": "fixed_profile_simulator_not_expert_evaluation",
+      "cases": 11,
+      "mean_questions": 2.8181818181818183,
+      "complete_information_rate": 0.7272727272727273,
+      "repeated_questions": 0,
+      "off_target_questions": 0,
+      "emergency_recall": 1.0,
+      "expert_hypothesis_quality": null,
+      "rows": [
+        {
+          "case_id": "sim-0-0",
+          "n_questions": 5,
+          "asked_slots": [
+            "timing",
+            "location",
+            "red_flag_screen",
+            "associated_symptoms",
+            "severity"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 4,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-1-0",
+          "n_questions": 4,
+          "asked_slots": [
+            "timing",
+            "location",
+            "red_flag_screen",
+            "severity"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 4,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-2-0",
+          "n_questions": 2,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 2,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-3-0",
+          "n_questions": 4,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen",
+            "associated_symptoms",
+            "severity"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 3,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-4-0",
+          "n_questions": 3,
+          "asked_slots": [
+            "timing",
+            "associated_symptoms",
+            "red_flag_screen"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 3,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-5-0",
+          "n_questions": 4,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen",
+            "triggers",
+            "location"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 3,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-6-0",
+          "n_questions": 5,
+          "asked_slots": [
+            "timing",
+            "location",
+            "red_flag_screen",
+            "severity",
+            "triggers"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 4,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "sim-7-0",
+          "n_questions": 3,
+          "asked_slots": [
+            "timing",
+            "red_flag_screen",
+            "triggers"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": true,
+          "remaining_core_slots": [],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": true,
+          "candidate_count": 0,
+          "summary_findings": 2,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "new-chest-pain",
+          "n_questions": 0,
+          "asked_slots": [],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": false,
+          "remaining_core_slots": [
+            "chief_complaint"
+          ],
+          "stopped": true,
+          "emergency_detected": true,
+          "expected_emergency": true,
+          "assessment_eligible": false,
+          "candidate_count": 0,
+          "summary_findings": 1,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "relative-dyspnea",
+          "n_questions": 0,
+          "asked_slots": [],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": false,
+          "remaining_core_slots": [
+            "timing",
+            "severity",
+            "associated_symptoms"
+          ],
+          "stopped": true,
+          "emergency_detected": true,
+          "expected_emergency": true,
+          "assessment_eligible": false,
+          "candidate_count": 0,
+          "summary_findings": 1,
+          "expert_hypothesis_quality": null
+        },
+        {
+          "case_id": "uncertain",
+          "n_questions": 1,
+          "asked_slots": [
+            "chief_complaint"
+          ],
+          "repeated_questions": 0,
+          "off_target_questions": 0,
+          "collected_core_information": false,
+          "remaining_core_slots": [
+            "chief_complaint"
+          ],
+          "stopped": true,
+          "emergency_detected": false,
+          "expected_emergency": false,
+          "assessment_eligible": false,
+          "candidate_count": 0,
+          "summary_findings": 0,
+          "expert_hypothesis_quality": null
+        }
+      ],
+      "generator": "planner+hf:Qwen/Qwen3-1.7B+models/E5C_pilot_20261031/final_adapter"
+    }
+  ],
+  "real_adapter_http_smoke": {
+    "mode": "real_transformers_lora_http_smoke",
+    "passed": true,
+    "checks": 7,
+    "question_source": "model",
+    "model_validation": {
+      "accepted": true,
+      "rejection_reasons": []
+    },
+    "model_identity": {
+      "provider": "transformers",
+      "base_model": "Qwen/Qwen3-1.7B",
+      "adapter": "C:\\Users\\Lenovo\\Documents\\meddies-health-ai\\qwen-rag-stack\\backend\\models\\E5C_pilot_20261031\\final_adapter",
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "loaded": true
+    },
+    "provider": "planner+Qwen/Qwen3-1.7B+lora",
+    "safety_router": "safety-router",
+    "scope_action": "OUT_OF_SCOPE",
+    "stop_action": "FINALIZE",
+    "grounding_status": "degraded"
+  },
+  "source_checked_rag_smoke": {
+    "method": "two_excerpt_retrieval_smoke_not_clinical_benchmark",
+    "embedding_model": "BAAI/bge-m3",
+    "reranker": "score",
+    "passed": true,
+    "rows": [
+      {
+        "query": "What is a stroke?",
+        "expected_source": "nlm-stroke-excerpt-20261031",
+        "retrieved_sources": [
+          "nlm-stroke-excerpt-20261031",
+          "nhs-headache-excerpts-20261031"
+        ]
+      },
+      {
+        "query": "Headache suddenly extremely painful",
+        "expected_source": "nhs-headache-excerpts-20261031",
+        "retrieved_sources": [
+          "nhs-headache-excerpts-20261031",
+          "nlm-stroke-excerpt-20261031"
+        ]
+      }
+    ],
+    "clinical_review": "pending"
+  }
+}

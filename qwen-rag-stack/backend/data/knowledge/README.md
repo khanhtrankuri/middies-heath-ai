@@ -25,3 +25,11 @@ performed. Add a sidecar named `<document>.<ext>.metadata.json` when metadata is
 Unknown metadata must be omitted or set to `null`; do not guess it. Rebuild the generated,
 git-ignored index after adding, changing, or removing a source. Model retraining is not needed.
 
+`source_checked_excerpt_cards_20261031.json` contains two short attributed excerpt cards checked
+against the official MedlinePlus/NHS pages on 2026-10-31. Their status means publisher URL and
+excerpt text were checked; it does **not** mean independent clinician review, comprehensive
+medical coverage, or adaptation of foreign clinical pathways to Vietnam. Publication dates
+remain null; the actual source update/review dates are recorded in `source_version`.
+These cards contain no medication treatment directions. Original source terms apply.
+Meddies training examples and developer-authored condition tables are not these sources.
+

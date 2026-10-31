@@ -224,6 +224,9 @@ def build_sft_config(
         max_grad_norm=float(training["max_grad_norm"]),
         optim=configured_optim,
         seed=int(training["seed"]),
+        load_best_model_at_end=bool(training.get("load_best_model_at_end", False)),
+        metric_for_best_model=training.get("metric_for_best_model", "eval_loss"),
+        greater_is_better=bool(training.get("greater_is_better", False)),
         data_seed=int(training["seed"]),
         dataloader_num_workers=_resolve_dataloader_workers(
             int(training.get("dataloader_num_workers", 4))

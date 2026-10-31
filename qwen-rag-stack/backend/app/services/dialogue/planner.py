@@ -212,10 +212,13 @@ def select_next_medical_question(
     if state.emergency_flags:
         return NextQuestion(should_ask=False, strategy="emergency_stop",
                             reason="Có dấu hiệu nguy hiểm: ưu tiên khuyến nghị cấp cứu thay vì tiếp tục hỏi.")
+    if state.questions_asked >= 6 or state.unable_to_continue:
+        return NextQuestion(should_ask=False, strategy="complete",
+                            reason="Đạt giới hạn hỏi hoặc người bệnh không thể cung cấp thêm thông tin.")
     if state.chief_complaint is None:
         return NextQuestion(
             should_ask=True, slot="chief_complaint", slot_label="triệu chứng chính",
-            text=_personalize("Bạn đang gặp triệu chứng gì và triệu chứng đó bắt đầu từ khi nào?", state),
+            text=_personalize("Bạn đang gặp triệu chứng chính nào?", state),
             strategy="chief_complaint", reason="Chưa ghi nhận triệu chứng chính.",
         )
     features = set(state.features)
@@ -229,7 +232,9 @@ def select_next_medical_question(
         return NextQuestion(should_ask=False, strategy="complete", candidate_count=len(candidates),
                             reason="Đã đủ thông tin cốt lõi hoặc đạt giới hạn số câu hỏi.")
     # Never re-ask a slot the user was already asked twice without a usable answer.
-    missing = [slot for slot in missing if state.asked_slots.get(slot, 0) < 2] or missing
+    missing = [slot for slot in missing if state.asked_slots.get(slot, 0) < 2]
+    if not missing:
+        return NextQuestion(should_ask=False, strategy="complete", reason="Không tiếp tục hỏi lặp thông tin chưa trả lời được.")
     cues = _risk_cues(state)
     if "red_flag_screen" in missing and cues:
         return NextQuestion(
