@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -37,6 +37,10 @@ class DocumentMetadata(BaseModel):
     section: str | None = None
     page: int | None = Field(default=None, ge=1)
     document_hash: str
+    source_version: str | None = None
+    review_status: Literal["unreviewed", "source_checked", "clinician_reviewed"] = "unreviewed"
+    reviewed_by: str | None = None
+    reviewed_at: str | None = None
 
     @field_validator(
         "source_id",
@@ -95,6 +99,8 @@ class RetrievedChunk(TextChunk):
 class Citation(BaseModel):
     citation_id: str
     source_id: str | None = None
+    review_status: str = "unreviewed"
+    source_version: str | None = None
     title: str | None = None
     organization: str | None = None
     source_url: str | None = None

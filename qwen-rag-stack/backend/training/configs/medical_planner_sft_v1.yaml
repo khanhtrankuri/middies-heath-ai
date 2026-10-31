@@ -1,0 +1,37 @@
+experiment: E5C
+model:
+  name: Qwen/Qwen3-1.7B
+  dtype: bfloat16
+  attention_implementation: sdpa
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  bias: none
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+data:
+  processed_dir: data/processed
+dataset_mix:
+  vietnamese_planner_sft_v1: 1.0
+training:
+  max_seq_length: 2048
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.0001
+  num_train_epochs: 1
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  packing: false
+  seed: 42
+  eval_steps: 10
+  save_steps: 10
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  dataloader_num_workers: 0
+output:
+  dir: models/E5C_planner_sft_v1
+tracking:
+  enabled: false

@@ -1,4 +1,6 @@
 export type Citation = {
+  review_status?: "unreviewed" | "source_checked" | "clinician_reviewed";
+  source_version?: string | null;
   citation_id: string;
   source_id: string | null;
   title: string | null;
@@ -69,6 +71,8 @@ export type ConsultationResponse = {
   missing_information?: string[];
   next_question?: NextQuestion | null;
   question_source?: "model" | "template" | null;
+  model_validation?: { accepted: boolean; rejection_reasons: string[] } | null;
+  model_identity?: { provider?: string; base_model?: string; adapter?: string | null; loaded?: boolean };
   assessment?: Assessment | null;
   emergency_flags?: string[];
   limitations?: string[];
@@ -135,7 +139,7 @@ function affirmed(needle: string, prefix: string, suffix: string): boolean {
   if (needle === "ngo doc" && /^\s*(?:thuc pham|thuc an)\b/.test(suffix)) return false;
   if (needle === "non" && /\bbuon\s*$/.test(prefix)) return false;
   if (needle === "muon chet" && IDIOM_BEFORE_DIE.test(prefix)) return false;
-  const clause = (prefix.split(/\b(?:va|nhung|ma|tuy nhien|and|but|however)\b|[,.;!?\n]/).at(-1) ?? "")
+  const clause = (prefix.split(/\b(?:va|nhung|ma|tuy nhien|bay gio|hien tai|luc nay|and|but|however|now)\b|[,.;!?\n]/).at(-1) ?? "")
     .replace(/\b(?:khong (?:chi|het|giam)|not only)\b/g, "");
   return !/\b(?:khong|chua|ko|no|not|without|deny|denies)\b(?:\s+\w+){0,4}\s*$/.test(clause);
 }

@@ -12,24 +12,25 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from app.triage import _affirmed
 
 _VIETNAMESE_MARKS = re.compile(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]")
 
 
+@lru_cache(maxsize=512)
+def _fold_character(char: str) -> str:
+    # Cache characters only, never patient messages across requests.
+    if char == "đ":
+        return "d"
+    base = "".join(part for part in unicodedata.normalize("NFD", char) if unicodedata.category(part) != "Mn")
+    return base if len(base) == 1 else char
+
+
 def fold_aligned(text: str) -> str:
     """Lowercase and strip diacritics while preserving string length."""
-    out = []
-    for char in unicodedata.normalize("NFC", text).lower():
-        if char == "đ":
-            out.append("d")
-            continue
-        base = "".join(
-            part for part in unicodedata.normalize("NFD", char) if unicodedata.category(part) != "Mn"
-        )
-        out.append(base if len(base) == 1 else char)
-    return "".join(out)
+    return "".join(_fold_character(char) for char in unicodedata.normalize("NFC", text).lower())
 
 
 def normalize(text: str) -> str:
@@ -306,7 +307,7 @@ def question_topics(text: str) -> QuestionTopic:
     for question in split_questions(text):
         folded = fold_aligned(question)
         for slot, cues in QUESTION_SLOT_CUES.items():
-            if any(re.search(cue, folded) for cue in cues):
+            if any(re.search(rf"(?<!\w)(?:{cue})(?!\w)", folded) for cue in cues):
                 topic.slots.add(slot)
         # "Mỗi cơn kéo dài bao lâu?" asks about episode length, not onset.
         if "timing" in topic.slots and re.search(r"moi (?:lan|con|dot|khi)|tung con", folded) \

@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.services.dialogue import extract_dialogue_state
+from app.services.dialogue.planner import select_next_medical_question
 from app.services.dialogue.lexicon import split_questions
 from app.services.dialogue.profiles import PROFILE_BY_NAME, required_slots
 from app.services.dialogue.prompts import CERTAIN_DIAGNOSIS, DISEASE_NAMING, DOSE
@@ -27,6 +28,7 @@ REDUNDANCY_SLOTS = ("timing", "location", "severity", "relevant_history", "medic
 # deliberately narrower than the planner's QUESTION_SLOT_CUES, which favour
 # recall when interpreting a patient's short answer.
 METRIC_QUESTION_CUES: dict[str, str] = {
+    "chief_complaint": r"(?:trieu chung|van de suc khoe) (?:chinh )?(?:gi|nao)|gap trieu chung|mo ta (?:ro hon )?ve trieu chung",
     "timing": r"bat dau (?:tu )?(?:khi nao|luc nao|bao gio|tu hom nao)|tu khi nao|tu bao gio|tu luc nao|bao lau (?:roi|nay)"
               r"|(?:bi|keo dai|duoc) (?:khoang )?bao lau|may ngay (?:roi|nay)|bao nhieu ngay",
     "location": r"(?:o |tai )?vi tri nao|dau o (?:dau|vung nao|cho nao|ben nao)|dau cho nao|o vung nao|vung nao cua|ben nao|phia nao",
@@ -85,14 +87,21 @@ def score_question_turn(
     questions = split_questions(response)
     asked = metric_question_slots(response)
     redundant = asked & known
+    decision = select_next_medical_question(prefix, state)
     row: dict[str, Any] = {
         "asks_question": bool(questions),
         "n_questions": len(questions),
         "over_question_limit": len(questions) > 2,
+        "multiple_questions": len(questions) > 1,
         "asked_slots": sorted(asked),
         "known_slots": sorted(known),
         "redundant_slots": sorted(redundant),
         "non_redundant": not redundant,
+        # Absence of a detected question is unscorable, not a successful
+        # non-redundant turn. Keep v1 field only for historical comparison.
+        "repeated_information_rate": bool(redundant) if asked else None,
+        "target_slot": decision.slot,
+        "target_slot_hit": decision.slot in asked if decision.should_ask else None,
         "targets_missing": bool(asked & missing) if asked else False,
         "relevance": (len(asked & missing) / len(asked)) if asked else 0.0,
         "premature_diagnosis": bool(turn_index <= 2 and (DISEASE_NAMING.search(response) or CERTAIN_DIAGNOSIS.search(response))),

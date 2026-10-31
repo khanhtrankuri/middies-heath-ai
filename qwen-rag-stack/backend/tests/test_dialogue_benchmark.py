@@ -22,6 +22,8 @@ def test_question_metrics_detect_redundancy_relevance_and_premature_diagnosis():
     premature = score_question_turn(prefix, "Có thể bạn bị viêm dạ dày. Hãy uống 20 mg omeprazole.", turn_index=1)
     assert premature["premature_diagnosis"] and premature["unsafe"] and not premature["asks_question"]
     assert score_question_turn(prefix, "A? B? C?")["over_question_limit"]
+    vague = score_question_turn([{"role": "user", "content": "Tôi thấy không khỏe"}], "Bạn đang gặp triệu chứng chính nào?")
+    assert vague["target_slot_hit"]
 
 
 def test_information_completeness_counts_initially_missing_core_slots():

@@ -36,7 +36,10 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from app.services.dialogue import extract_dialogue_state, select_next_medical_question
-from app.services.dialogue.prompts import CONSULTATION_SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION
+from app.services.dialogue.prompts import CONSULTATION_SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION, PLANNER_PROMPT_VERSION, planner_messages
+from app.services.dialogue.question_generator import resolve_question
+from app.services.dialogue.guardrails import check_scope
+from app.triage import emergency_reply
 from evals.dialogue_metrics import conversation_coverage, score_behavior, score_question_turn, summarize
 
 LOGGER = logging.getLogger(__name__)
@@ -46,7 +49,56 @@ THINK = re.compile(r"<think>.*?</think>", re.S | re.I)
 QUESTION_METRICS = (
     "asks_question", "non_redundant", "targets_missing", "relevance", "reference_slot_f1",
     "over_question_limit", "premature_diagnosis", "unsafe", "n_questions", "chars", "latency_seconds",
+    "target_slot_hit", "repeated_information_rate", "model_accepted", "template_fallback",
+    "multiple_questions",
 )
+METRIC_VERSION = "dialogue-metrics-v3"
+
+
+class GuidedGenerator:
+    """E5 shares API prompt, deterministic safety and output validation.
+
+    Failures from the model propagate; the benchmark never substitutes a
+    different provider. Template rejections are reported separately.
+    """
+    def __init__(self, model):
+        self.model = model
+        self.name = "planner+" + model.name
+        self.records = {}
+
+    def generate(self, batch):
+        outputs = [""] * len(batch)
+        pending, prompts = [], []
+        for index, messages in enumerate(batch):
+            history = [m for m in messages if m["role"] in {"user", "assistant"}]
+            state = extract_dialogue_state(history)
+            decision = select_next_medical_question(history, state)
+            latest = next(m["content"] for m in reversed(history) if m["role"] == "user")
+            scope = check_scope(latest)
+            if state.emergency_flags:
+                outputs[index] = emergency_reply(state.emergency_flags)
+            elif not scope.in_scope:
+                outputs[index] = scope.reply or ""
+            elif not decision.should_ask:
+                outputs[index] = "Chưa thể xác định chẩn đoán từ hội thoại; nên trao đổi với nhân viên y tế."
+            else:
+                pending.append((index, history, state, decision))
+                prompts.append(planner_messages(history, state, decision))
+        if prompts:
+            raw = self.model.generate(prompts)
+            if len(raw) != len(prompts):
+                raise ValueError("Model returned an incomplete batch")
+            for (index, history, state, decision), reply in zip(pending, raw):
+                rendered = resolve_question(reply, decision, state)
+                outputs[index] = rendered.text
+                self.records[_key(history)] = {
+                    "target_slot": decision.slot, "question_source": rendered.source,
+                    "model_validation": rendered.validation,
+                    "model_accepted": rendered.validation["accepted"],
+                    "template_fallback": rendered.source == "template",
+                    "raw_output_chars": len(reply),
+                }
+        return outputs
 
 
 def build_items(test_path: Path, *, conversations: int, max_turn: int, seed: int) -> list[dict[str, Any]]:
@@ -169,6 +221,8 @@ def run_generation(generator: Generator, prompts: list[list[dict[str, str]]], ba
         indices = order[start : start + batch_size]
         began = time.perf_counter()
         outputs = generator.generate([prompts[i] for i in indices])
+        if len(outputs) != len(indices):
+            raise ValueError("Generator returned an incomplete batch")
         per_item = (time.perf_counter() - began) / len(indices)
         for index, text in zip(indices, outputs):
             replies[index], latencies[index] = text, per_item
@@ -183,7 +237,13 @@ def evaluate(
     replies, latencies = run_generation(generator, prompts, batch_size)
     behavior_prompts = [_with_system(case["messages"]) for case in behavior_cases]
     behavior_replies, behavior_latencies = run_generation(generator, behavior_prompts, batch_size) if behavior_cases else ([], [])
-    return score_all(items, replies, latencies, behavior_cases, behavior_replies, behavior_latencies)
+    rows, behavior_rows, metrics = score_all(items, replies, latencies, behavior_cases, behavior_replies, behavior_latencies)
+    if isinstance(generator, GuidedGenerator):
+        for item, row in zip(items, rows):
+            row.update(generator.records.get(_key(item["prefix"]), {}))
+        for metric in ("model_accepted", "template_fallback"):
+            metrics["question_generation"][metric] = summarize(rows, metric)
+    return rows, behavior_rows, metrics
 
 
 def score_all(
@@ -238,6 +298,8 @@ def rescore(run_dir: Path) -> dict[str, Any]:
     Rescoring guarantees that all compared runs use identical metric code.
     """
     run = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    if hashlib.sha256(DEFAULT_BEHAVIOR.read_bytes()).hexdigest() != run["behavior_cases_sha256"]:
+        raise ValueError("Behavior case definitions changed; historical responses cannot be rescored against new cases")
     test_file = Path(run["test_file"])
     if hashlib.sha256(test_file.read_bytes()).hexdigest() != run["test_file_sha256"]:
         raise ValueError(f"{test_file} changed since {run_dir.name} was generated; rescoring would be invalid")
@@ -252,12 +314,22 @@ def rescore(run_dir: Path) -> dict[str, Any]:
         items, [question[i["item_id"]]["response"] for i in items], [question[i["item_id"]]["latency_seconds"] for i in items],
         cases, [behavior[c["id"]]["response"] for c in cases], [behavior[c["id"]]["latency_seconds"] for c in cases],
     )
-    with (run_dir / "predictions.jsonl").open("w", encoding="utf-8", newline="\n") as handle:
+    target = run_dir.with_name(run_dir.name + "-rescored-" + METRIC_VERSION)
+    target.mkdir(parents=True, exist_ok=False)
+    for row in rows:
+        row.update({k: v for k, v in question[row["item_id"]].items()
+                    if k in {"model_validation", "model_accepted", "template_fallback", "question_source", "raw_output_chars"}})
+    for metric in ("model_accepted", "template_fallback"):
+        metrics["question_generation"][metric] = summarize(rows, metric)
+    with (target / "predictions.jsonl").open("w", encoding="utf-8", newline="\n") as handle:
         for row in rows + behavior_rows:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
     run["metrics"] = metrics
+    run["metric_version"] = METRIC_VERSION
+    run["planner_protocol"] = "planner-v2-max6-optional0"
+    run["run_name"] += "-rescored-" + METRIC_VERSION
     run["rescored_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
-    (run_dir / "metrics.json").write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
+    (target / "metrics.json").write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
     return run
 
 
@@ -273,7 +345,8 @@ def main(argv: list[str] | None = None) -> int:
             LOGGER.info("Rescored %s", run_dir)
         return 0
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--backend", choices=("hf", "planner", "reference"), required=True)
+    parser.add_argument("--backend", choices=("hf", "guided", "planner", "reference"), required=True)
+    parser.add_argument("--experiment", choices=("E1", "E2", "E3", "E4", "E5A", "E5B", "E5C"))
     parser.add_argument("--run-name", required=True)
     parser.add_argument("--test-file", type=Path, default=DEFAULT_TEST)
     parser.add_argument("--behavior-cases", type=Path, default=DEFAULT_BEHAVIOR)
@@ -287,6 +360,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=Path("reports/benchmark"))
     args = parser.parse_args(argv)
+    if args.experiment in {"E5A", "E5B", "E5C"}:
+        if args.backend != "guided" or (args.experiment == "E5A" and args.adapter) or (args.experiment != "E5A" and not args.adapter):
+            parser.error("E5A requires guided base; E5B/E5C require guided with an explicit adapter")
+    if min(args.batch_size, args.conversations, args.max_turn) < 1:
+        parser.error("Batch size, conversations and max turn must be positive")
+    target = args.output_dir / args.run_name
+    if target.exists():
+        raise FileExistsError("Run exists; select a new run name to preserve historical results")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     items = build_items(args.test_file, conversations=args.conversations, max_turn=args.max_turn, seed=args.seed)
@@ -299,35 +380,40 @@ def main(argv: list[str] | None = None) -> int:
     else:
         generator = HFGenerator(args.model, args.adapter, max_new_tokens=args.max_new_tokens,
                                 local_files_only=args.local_files_only)
+        if args.backend == "guided":
+            generator = GuidedGenerator(generator)
     started = time.perf_counter()
     rows, behavior_rows, metrics = evaluate(generator, items, behavior_cases, batch_size=args.batch_size)
     elapsed = time.perf_counter() - started
 
     runtime: dict[str, Any] = {"elapsed_seconds": round(elapsed, 2), "platform": platform.platform()}
-    if isinstance(generator, HFGenerator):
-        torch = generator.torch
+    hf = generator.model if isinstance(generator, GuidedGenerator) else generator
+    if isinstance(hf, HFGenerator):
+        torch = hf.torch
         properties = torch.cuda.get_device_properties(0)
         runtime.update({
             "gpu": properties.name, "gpu_total_gb": round(properties.total_memory / 1024**3, 2),
             "peak_gpu_memory_gb": round(torch.cuda.max_memory_allocated() / 1024**3, 3),
-            "generated_tokens": generator.generated_tokens,
-            "generated_tokens_per_second": round(generator.generated_tokens / elapsed, 2) if elapsed else None,
+            "generated_tokens": hf.generated_tokens,
+            "generated_tokens_per_second": round(hf.generated_tokens / elapsed, 2) if elapsed else None,
             "torch": torch.__version__,
         })
-    target = args.output_dir / args.run_name
-    target.mkdir(parents=True, exist_ok=True)
+    target.mkdir(parents=True, exist_ok=False)
     with (target / "predictions.jsonl").open("w", encoding="utf-8", newline="\n") as handle:
         for row in rows + behavior_rows:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
     run = {
         "run_name": args.run_name, "backend": args.backend, "generator": generator.name,
-        "model": args.model if args.backend == "hf" else None, "adapter": args.adapter,
+        "model": args.model if args.backend in {"hf", "guided"} else None, "adapter": args.adapter,
+        "experiment": args.experiment, "metric_version": METRIC_VERSION,
+        "model_revision": getattr(getattr(hf, "model", None), "config", None)._commit_hash if isinstance(hf, HFGenerator) else None,
         "test_file": str(args.test_file),
         "test_file_sha256": hashlib.sha256(args.test_file.read_bytes()).hexdigest(),
         "behavior_cases_sha256": hashlib.sha256(args.behavior_cases.read_bytes()).hexdigest(),
         "conversations_requested": args.conversations, "items": len(rows), "behavior_items": len(behavior_rows),
         "max_turn": args.max_turn, "seed": args.seed, "decoding": {"do_sample": False, "max_new_tokens": args.max_new_tokens},
-        "system_prompt_version": SYSTEM_PROMPT_VERSION, "runtime": runtime, "metrics": metrics,
+        "system_prompt_version": PLANNER_PROMPT_VERSION if args.backend == "guided" else SYSTEM_PROMPT_VERSION,
+        "planner_protocol": "planner-v2-max6-optional0", "runtime": runtime, "metrics": metrics,
         "note": "Automatic rule-based proxies on synthetic test data; not a clinical validation.",
     }
     (target / "metrics.json").write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")

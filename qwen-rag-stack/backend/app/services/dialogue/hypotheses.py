@@ -52,6 +52,9 @@ class Assessment(BaseModel):
     next_action: str
     method: str = f"rule_based_{KB_VERSION}"
     disclaimer: str = NOT_A_DIAGNOSIS
+    knowledge_provenance: dict[str, str] = Field(default_factory=lambda: {
+        "source": "developer_authored_heuristics", "version": KB_VERSION, "clinical_review": "not_reviewed",
+    })
 
 
 def _observed(state: DialogueState) -> list[str]:
@@ -90,7 +93,7 @@ def _candidate(condition: Condition, features: set[str]) -> CandidateCondition:
 
 def generate_hypotheses(state: DialogueState, *, max_candidates: int = 3) -> Assessment:
     missing = [SLOT_LABELS.get(slot, slot) for slot in state.missing_information + state.optional_missing]
-    if state.conversation_status != "READY_FOR_ASSESSMENT":
+    if state.conversation_status != "READY_FOR_ASSESSMENT" or state.unable_to_continue or not state.chief_complaint or not state.slot_filled("timing"):
         return Assessment(
             eligible=False, observed_findings=_observed(state), missing_information=missing,
             uncertainty="Chưa đủ thông tin để gợi ý tình trạng liên quan; hệ thống sẽ tiếp tục hỏi thêm.",

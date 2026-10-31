@@ -54,9 +54,25 @@ class SpyRAG(RAGService):
                     source_url="https://example.test/migraine",
                     section="Overview",
                     document_hash="a" * 64,
+                    source_version="test-fixture-v1", review_status="source_checked",
+                    reviewed_by="synthetic test fixture", reviewed_at="2026-10-31",
                 ),
             )
         ]
+
+
+def test_unreviewed_sources_do_not_ground_a_medical_answer(tmp_path):
+    class UnreviewedRAG(SpyRAG):
+        async def retrieve_many(self, queries, final_k=None):
+            chunks = await super().retrieve_many(queries, final_k)
+            chunks[0].metadata.review_status = "unreviewed"
+            return chunks
+    inference = SpyInference()
+    response = asyncio.run(ConsultationOrchestrator(inference, UnreviewedRAG(tmp_path), "spy").respond([
+        {"role": "user", "content": "Migraine là gì?"},
+    ]))
+    assert response.grounding_status == "degraded" and not response.citations
+    assert not inference.calls
 
 
 def test_direct_medical_question_calls_rag_and_passes_context_to_model(tmp_path: Path) -> None:

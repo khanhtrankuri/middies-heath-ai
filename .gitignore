@@ -23,4 +23,11 @@ models/
 
 # Logs & OS
 *.log
+.sites-runtime/
+.python/
+.uv-cache/
+.venv-*/
+%SystemDrive%/
+*.tsbuildinfo
+.pytest_cache/
 .DS_Store
