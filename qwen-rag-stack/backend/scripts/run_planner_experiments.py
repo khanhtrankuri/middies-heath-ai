@@ -13,6 +13,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prefix", required=True)
     parser.add_argument("--e3-adapter", required=True)
+    parser.add_argument("--e5c-adapter", help="Evaluate an already trained E5C adapter; skip smoke/training")
     parser.add_argument("--train-samples", type=int, default=640)
     parser.add_argument("--eval-samples", type=int, default=64)
     parser.add_argument("--conversations", type=int, default=100)
@@ -24,13 +25,14 @@ def main():
     config = "training/configs/medical_planner_sft_v1.yaml"
     smoke = f"models/{args.prefix}_smoke"
     pilot = f"models/{args.prefix}_E5C"
-    run("smoke", ["-m", "training.train_stage1", "--config", config, "--smoke-test",
-                   "--max-train-samples", "32", "--max-eval-samples", "8", "--output-dir", smoke], logs)
-    run("E5C_train", ["-m", "training.train_stage1", "--config", config,
-                       "--max-train-samples", str(args.train_samples), "--max-eval-samples", str(args.eval_samples),
-                       "--output-dir", pilot], logs)
+    if not args.e5c_adapter:
+        run("smoke", ["-m", "training.train_stage1", "--config", config, "--smoke-test",
+                       "--max-train-samples", "32", "--max-eval-samples", "8", "--output-dir", smoke], logs)
+        run("E5C_train", ["-m", "training.train_stage1", "--config", config,
+                           "--max-train-samples", str(args.train_samples), "--max-eval-samples", str(args.eval_samples),
+                           "--output-dir", pilot], logs)
     runs = []
-    for experiment, adapter in (("E5A", None), ("E5B", args.e3_adapter), ("E5C", f"{pilot}/final_adapter")):
+    for experiment, adapter in (("E5A", None), ("E5B", args.e3_adapter), ("E5C", args.e5c_adapter or f"{pilot}/final_adapter")):
         name = f"{args.prefix}_{experiment}"
         command = ["-m", "evals.benchmark_dialogue", "--backend", "guided", "--experiment", experiment,
                    "--run-name", name, "--conversations", str(args.conversations), "--max-turn", str(args.max_turn),

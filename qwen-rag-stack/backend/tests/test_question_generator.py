@@ -63,3 +63,18 @@ def test_unknown_answer_stops_without_filling_a_patient_slot():
     state = extract_dialogue_state(history)
     assert state.location is None and state.unable_to_continue
     assert not select_next_medical_question(history, state).should_ask
+
+
+def test_every_profile_core_template_has_a_recognizable_target_slot():
+    from app.services.dialogue.profiles import PROFILES, question_template
+    from app.services.dialogue.lexicon import question_topics
+    for profile in PROFILES:
+        for slot in profile.core_slots:
+            assert slot in question_topics(question_template(profile, slot)).slots, (profile.name, slot)
+
+
+def test_ambiguous_yes_to_urinary_red_flag_screen_is_escalated():
+    history = [{"role": "user", "content": "Tôi tiểu buốt 2 ngày"},
+               {"role": "assistant", "content": "Bạn có sốt cao, rét run, đau nhiều vùng hông lưng, buồn nôn hoặc đang mang thai không?"},
+               {"role": "user", "content": "Có ạ"}]
+    assert extract_dialogue_state(history).emergency_flags

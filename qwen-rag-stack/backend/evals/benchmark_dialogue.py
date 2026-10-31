@@ -52,7 +52,7 @@ QUESTION_METRICS = (
     "target_slot_hit", "repeated_information_rate", "model_accepted", "template_fallback",
     "multiple_questions",
 )
-METRIC_VERSION = "dialogue-metrics-v3"
+METRIC_VERSION = "dialogue-metrics-v4"
 
 
 class GuidedGenerator:
@@ -326,7 +326,7 @@ def rescore(run_dir: Path) -> dict[str, Any]:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
     run["metrics"] = metrics
     run["metric_version"] = METRIC_VERSION
-    run["planner_protocol"] = "planner-v2-max6-optional0"
+    run["planner_protocol"] = "planner-v2.1-slot-cues-max6-optional0"
     run["run_name"] += "-rescored-" + METRIC_VERSION
     run["rescored_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
     (target / "metrics.json").write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -413,7 +413,7 @@ def main(argv: list[str] | None = None) -> int:
         "conversations_requested": args.conversations, "items": len(rows), "behavior_items": len(behavior_rows),
         "max_turn": args.max_turn, "seed": args.seed, "decoding": {"do_sample": False, "max_new_tokens": args.max_new_tokens},
         "system_prompt_version": PLANNER_PROMPT_VERSION if args.backend == "guided" else SYSTEM_PROMPT_VERSION,
-        "planner_protocol": "planner-v2-max6-optional0", "runtime": runtime, "metrics": metrics,
+        "planner_protocol": "planner-v2.1-slot-cues-max6-optional0", "runtime": runtime, "metrics": metrics,
         "note": "Automatic rule-based proxies on synthetic test data; not a clinical validation.",
     }
     (target / "metrics.json").write_text(json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
