@@ -103,3 +103,10 @@ For the Qwen/RAG system, use its own `backend/evals/` tools. Those and the root 
 ## License and third-party data
 
 No repository-wide license grant is declared here. Do not assume the source repository or third-party clinical documents/datasets may be redistributed commercially. Verify model terms, dataset license obligations, privacy regulations, and medical-software requirements for your intended use.
+
+## Planner-guided Qwen research track
+
+Triển khai mới tiếp tục dùng FastAPI tại `qwen-rag-stack/backend/` và frontend tại `qwen-rag-stack/app/`.
+Xem [hướng dẫn E5](qwen-rag-stack/docs/PLANNER_GUIDED.md) và
+[báo cáo thực nghiệm 31/10/2026](qwen-rag-stack/docs/PLANNER_E5_RESULTS_20261031.md).
+Đây là nguyên mẫu nghiên cứu chưa được chứng nhận sử dụng lâm sàng.

@@ -93,3 +93,9 @@ This application sends data to locally configured backend/model services; check 
 The root project uses **React/Vite + Express + hosted Gemini**, with four user-facing functions. This app uses **Next.js/Vinext + FastAPI + Qwen/RAG** and focuses on consultation. The Gemini evaluation script under root `evaluation/` is not automatically compatible with this FastAPI response schema.
 
 See [Repository architecture](../ARCHITECTURE.md) for the side-by-side comparison.
+
+## Planner-guided research update
+
+FastAPI là backend nghiên cứu chính. Hướng dẫn data pipeline E5C, LoRA smoke/reload, benchmark E5A/B/C,
+closed-loop và giới hạn lâm sàng: [docs/PLANNER_GUIDED.md](docs/PLANNER_GUIDED.md).
+Kết quả thực chạy: [docs/PLANNER_E5_RESULTS_20261031.md](docs/PLANNER_E5_RESULTS_20261031.md).
