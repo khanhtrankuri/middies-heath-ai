@@ -1,4 +1,5 @@
 import { ChatSession, DocumentAnalysisResult, PatientProfile } from '../types/health';
+import { MEDDIES_CONVERSATION_SAMPLES } from './meddiesDatasetSamples';
 
 export const getTodayDateString = (): string => {
   return new Date().toISOString().split('T')[0];
@@ -107,15 +108,15 @@ export const INITIAL_CHAT_SESSIONS: ChatSession[] = [
         timestamp: '08:02',
         triageData: {
           triageLevel: 'MONITOR',
-          triageTitle: 'Theo dõi tại nhà & Tránh dùng thuốc kháng viêm NSAID',
+          triageTitle: 'Theo dõi tại nhà & Khuyến nghị khám Nội Tiêu hóa nếu kéo dài',
           summary:
-            'Triệu chứng đau âm ỉ thượng vị kèm ợ chua khi đói và thức khuya là biểu hiện điển hình của đợt kích ứng tăng tiết axit dạ dày - trào ngược. Thuốc Ibuprofen thuộc nhóm NSAID sẽ làm tổn thương niêm mạc dạ dày nặng hơn và có nguy cơ gây xuất huyết tiêu hóa.',
+            'Triệu chứng đau âm ỉ thượng vị kèm ợ chua khi đói và thức khuya là biểu hiện điển hình của đợt kích ứng tăng tiết axit dạ dày - trào ngược (GERD / Viêm dạ dày cấp). Thuốc Ibuprofen thuộc nhóm NSAID sẽ làm tổn thương niêm mạc dạ dày nặng hơn và có nguy cơ gây xuất huyết tiêu hóa.',
           detailedExplanation:
-            '1. Vì sao không được dùng Ibuprofen: Ibuprofen ức chế tổng hợp Prostaglandin — chất bảo vệ niêm mạc dạ dày, khiến axit ăn mòn thành dạ dày mạnh hơn.\n2. Xử trí phù hợp: Anh đang có Esomeprazole 20mg trong lịch thuốc buổi sáng, hãy duy trì uống đúng giờ trước ăn sáng 30 phút. Khi đang đau rát thượng vị, có thể dùng thêm thuốc trung hòa axit dạng gói (Antacid như Phosphalugel hoặc Gaviscon) sau ăn 1-2 giờ hoặc lúc đau.\n3. Điều chỉnh sinh hoạt: Chia nhỏ bữa ăn, không để bụng quá đói hoặc ăn quá no, ngưng cà phê/đồ chua cay và ngủ trước 23h00.',
+            '1. Phân tích triệu chứng & Lý do không dùng Ibuprofen: Ibuprofen ức chế tổng hợp Prostaglandin — chất bảo vệ niêm mạc dạ dày, khiến axit ăn mòn thành dạ dày mạnh hơn.\n2. Hướng xử trí tham khảo: Anh đang có Esomeprazole 20mg trong lịch thuốc buổi sáng, hãy duy trì uống đúng giờ trước ăn sáng 30 phút. Khi đang đau rát thượng vị, có thể tham khảo ý kiến bác sĩ/dược sĩ về thuốc trung hòa axit dạng gói (Antacid) sau ăn 1-2 giờ.\n3. Khuyến nghị cơ sở y tế: Nếu triệu chứng kéo dài trên 2 tuần hoặc tái phát liên tục, anh nên đến khám Chuyên khoa Nội Tiêu hóa tại Bệnh viện Đa khoa để kiểm tra H. pylori và đánh giá niêm mạc dạ dày.',
           possibleCauses: [
-            'Đợt cấp viêm dạ dày - tá tràng do căng thẳng (Stress) và thức khuya',
-            'Trào ngược dạ dày - thực quản (GERD)',
-            'Tăng tiết axit dịch vị khi để bụng đói kéo dài',
+            'Trào ngược dạ dày - thực quản (GERD) · Mã ICD-10: K21.0',
+            'Đợt kích ứng viêm niêm mạc dạ dày - tá tràng cấp · Mã ICD-10: K29.1',
+            'Khó tiêu chức năng liên quan căng thẳng (Stress) và thức khuya · Mã ICD-10: K30',
           ],
           selfCareSteps: [
             'Uống 1 cốc nước ấm từng ngụm nhỏ để làm dịu và rửa trôi axit thực quản',
@@ -129,12 +130,104 @@ export const INITIAL_CHAT_SESSIONS: ChatSession[] = [
             'Đi ngoài phân đen sệt như nhựa đường, hoa mắt chóng mặt, vã mồ hôi lạnh',
           ],
           personalizedNotes:
-            'Hồ sơ của anh ghi nhận tiền sử Viêm dạ dày tá tràng nhẹ và Dị ứng Penicillin. Tuyệt đối tránh nhóm giảm đau kháng viêm không steroid (NSAIDs) như Ibuprofen, Meloxicam, Aspirin. Nếu cần dùng thuốc giảm đau hạ sốt thông thường, Paracetamol an toàn hơn cho dạ dày nhưng chỉ dùng khi thực sự cần.',
+            'Hồ sơ của anh ghi nhận tiền sử Viêm dạ dày tá tràng nhẹ và Dị ứng Penicillin. Tuyệt đối tránh nhóm giảm đau kháng viêm không steroid (NSAIDs) như Ibuprofen, Meloxicam, Aspirin.',
           followUpQuestions: [
-            'Tôi có thể dùng gói chữ P (Phosphalugel) cách thuốc Esomeprazole bao lâu?',
-            'Thực đơn 3 bữa cho người đang đau thượng vị nên ăn những món gì?',
-            'Khi nào tôi cần đi nội soi dạ dày kiểm tra lại?',
+            'Tôi không bị nôn ói hay đi ngoài phân đen, chỉ đau rát khi đói',
+            'Khi nào tôi cần đến Chuyên khoa Nội Tiêu hóa để nội soi dạ dày?',
+            'Thực đơn 3 bữa cho người bị trào ngược dạ dày nên ăn gì?',
           ],
+          activeEngine: 'Cloud Hybrid AI + Meddies/meddies-consultant RAG + 7-Stage DST',
+          dialogueState: {
+            action: 'FINALIZE',
+            stageNumber: 3,
+            stageLabel: 'Bước 3/3: Dự đoán bệnh có khả năng liên quan & Khuyến nghị y tế',
+            profileName: 'abdominal',
+            profileLabel: 'Tiêu hóa · Dạ dày - Ruột',
+            collectedSlots: [
+              {
+                slot: 'symptoms',
+                label: 'Triệu chứng ghi nhận',
+                value: 'Đau vùng thượng vị / dạ dày, Ợ chua / Ợ nóng trào ngược',
+              },
+              {
+                slot: 'duration',
+                label: 'Thời gian khởi phát',
+                value: 'Mấy hôm nay',
+              },
+              {
+                slot: 'location',
+                label: 'Vị trí triệu chứng',
+                value: 'vùng thượng vị',
+              },
+              {
+                slot: 'severity',
+                label: 'Mức độ / Chỉ số đo',
+                value: 'âm ỉ',
+              },
+              {
+                slot: 'triggers',
+                label: 'Yếu tố khởi phát / Liên quan',
+                value: 'thức khuya, khi đói',
+              },
+            ],
+            missingSlots: ['Sàng lọc dấu hiệu nguy hiểm tiêu hóa'],
+            negatedFindings: [],
+            emergencyFlags: [],
+            plannedQuestion: {
+              slot: 'red_flag_screen',
+              slotLabel: 'Sàng lọc dấu hiệu nguy hiểm tiêu hóa',
+              questionText:
+                'Bạn có kèm theo nôn ói, đi ngoài phân đen, sốt hay sụt cân không?',
+              reason:
+                'Loại trừ sớm biến chứng xuất huyết tiêu hóa hoặc nhiễm trùng đường ruột.',
+              quickReplies: [
+                'Tôi không nôn, không sốt và đi ngoài bình thường',
+                'Có buồn nôn nhẹ nhưng không sốt',
+                'Có kèm đi ngoài phân lỏng 2–3 lần',
+              ],
+            },
+            candidateHypotheses: [
+              {
+                name: 'Trào ngược dạ dày - thực quản (GERD) & Viêm niêm mạc dạ dày cấp',
+                icd10: 'K21.0 / K29.1',
+                matchScore: 91,
+                supportingEvidence: [
+                  'Triệu chứng ghi nhận: Đau vùng thượng vị / dạ dày, Ợ chua / Ợ nóng trào ngược',
+                  'Vị trí triệu chứng: vùng thượng vị',
+                  'Yếu tố khởi phát / Liên quan: thức khuya, khi đói',
+                ],
+                missingEvidence: [
+                  'Sàng lọc dấu hiệu nguy hiểm tiêu hóa (nôn máu, phân đen)',
+                  'Kết quả nội soi dạ dày hoặc xét nghiệm H. pylori',
+                ],
+                explanation:
+                  'Phù hợp cao với triệu chứng vùng thượng vị, ợ chua hoặc nóng rát liên quan bữa ăn và thức khuya trong tập dữ liệu Meddies/meddies-consultant.',
+                referenceInfo:
+                  'Trào ngược dạ dày - thực quản (GERD) và viêm niêm mạc dạ dày xảy ra khi axit dịch vị kích ứng thực quản và niêm mạc thượng vị. Cần tránh ăn muộn trước khi ngủ 2–3 giờ và không tự ý dùng thuốc giảm đau nhóm NSAIDs.',
+                recommendedFacility:
+                  'Chuyên khoa Nội Tiêu hóa — Bệnh viện Đa khoa hoặc Phòng khám Chuyên khoa Nội',
+                careLevel: 'routine',
+              },
+              {
+                name: 'Khó tiêu chức năng (Functional Dyspepsia) / Theo dõi loét tá tràng',
+                icd10: 'K30 / K27',
+                matchScore: 76,
+                supportingEvidence: [
+                  'Đau âm ỉ thượng vị tăng khi bụng đói và căng thẳng công việc',
+                ],
+                missingEvidence: [
+                  'Xét nghiệm hơi thở C13 hoặc nội soi kiểm tra vi khuẩn H. pylori',
+                ],
+                explanation:
+                  'Đau thượng vị xuất hiện khi đói hoặc ban đêm cần được theo dõi và phân biệt với loét hành tá tràng.',
+                referenceInfo:
+                  'Nếu cơn đau thượng vị kéo dài trên 2 tuần hoặc tái phát nhiều đợt, người bệnh cần được bác sĩ chuyên khoa tiêu hóa thăm khám và chỉ định xét nghiệm H. pylori.',
+                recommendedFacility: 'Chuyên khoa Nội Tiêu hóa — Bệnh viện Đa khoa',
+                careLevel: 'soon',
+              },
+            ],
+            matchedMeddiesSamples: [MEDDIES_CONVERSATION_SAMPLES[0]],
+          },
         },
       },
     ],

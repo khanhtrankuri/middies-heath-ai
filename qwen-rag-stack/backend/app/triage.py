@@ -24,7 +24,10 @@ RED_FLAGS: dict[str, tuple[str, ...]] = {
     "co giật": ("co giat", "seizure", "convulsion"),
     "yếu hoặc liệt": ("yeu liet", "liet", "yeu mot ben", "one sided weakness"),
     "méo miệng": ("meo mieng", "meo mat", "lech mieng", "facial droop"),
-    "chảy máu nhiều": ("chay mau nhieu", "máu không cầm", "mau khong cam"),
+    "chảy máu nhiều": (
+        "chay mau nhieu", "máu không cầm", "mau khong cam", "mau chay nhieu", "chay mau khong ngung",
+        "mau chay khong ngung",
+    ),
     "rối loạn nói đột ngột": (
         "noi kho dot ngot", "dot ngot noi kho", "noi ngong dot ngot", "dot ngot noi ngong",
         "bong nhien noi ngong", "tu nhien noi ngong", "slurred speech",
@@ -32,7 +35,10 @@ RED_FLAGS: dict[str, tuple[str, ...]] = {
     "tím tái": ("moi tim tai", "tim moi", "blue lips"),
     "sưng đường thở": ("sung luoi", "sung hong", "swollen tongue", "throat swelling"),
     "nôn ra máu": ("non ra mau", "vomiting blood"),
-    "đau đầu dữ dội đột ngột": ("dau dau du doi dot ngot", "dot ngot dau dau du doi", "sudden severe headache"),
+    "đau đầu dữ dội đột ngột": (
+        "dau dau du doi dot ngot", "dot ngot dau dau du doi", "sudden severe headache",
+        "dau du doi nhat tu truoc", "dau dau du doi nhat", "worst headache",
+    ),
     "li bì hoặc khó đánh thức": ("li bi", "kho danh thuc", "khong danh thuc duoc", "lơ mơ", "unresponsive"),
     "ngộ độc hoặc quá liều": (
         "qua lieu", "uong ca vi", "uong het vi", "uong ca lo", "uong het lo", "uong ca hop",
@@ -61,6 +67,11 @@ COMBINED_RED_FLAGS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         r"|\b(?:be|con|chau|em be)(?: \w+)? \d{1,2} (?:ngay|tuan)\b|\b[0-2] thang tuoi\b"
         r"|\b(?:be|con|chau)(?: \w+)? [0-2] thang\b|\b\d{1,2} (?:days?|weeks?) old\b|\b[0-2] months? old\b)",
         ("sot", "fever", "bo bu", "refusing to feed"),
+    ),
+    (
+        "cứng cổ kèm sốt, nôn hoặc đau đầu dữ dội",
+        r"\b(?:cung co|co cung|gay cung|stiff neck)\b",
+        ("sot", "fever", "non", "vomiting", "dau dau du doi", "severe headache"),
     ),
     (
         "phản vệ",

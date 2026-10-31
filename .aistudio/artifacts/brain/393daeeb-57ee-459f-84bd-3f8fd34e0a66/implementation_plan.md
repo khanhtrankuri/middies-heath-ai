@@ -1,155 +1,158 @@
-# Middies Health AI — Hệ Thống Trợ Lý Y Tế & Chăm Sóc Sức Khỏe Cá Nhân Toàn Diện
+# Ứng Dụng AI Cho Bài Toán Y Tế — Hệ Thống Tư Vấn Sức Khỏe & Sàng Lọc Triệu Chứng Đa Lượt (`Meddies/meddies-consultant`)
 
-> **Tài liệu lịch sử:** Đây là bản kế hoạch triển khai ban đầu của Gemini app trước khi có mã nguồn. Các nhận định rằng repository chưa có frontend/backend đã lỗi thời. Để xem kiến trúc hiện tại sau merge, dùng [README](../../../../README.md) và [ARCHITECTURE](../../../../ARCHITECTURE.md) ở thư mục gốc.
+Tái cấu trúc và nâng cấp toàn diện ứng dụng Web/App và hệ thống Backend suy luận để bám sát 100% mục tiêu, sản phẩm dự kiến và mô tả trong bản đăng ký đề tài **"Ứng dụng AI cho bài toán Y Tế"**: tiếp nhận triệu chứng bằng ngôn ngữ tự nhiên, chủ động đặt câu hỏi bổ sung đa lượt để thu thập bệnh sử, dự đoán các bệnh có khả năng liên quan kèm thông tin y tế tham khảo, khuyến nghị thăm khám tại cơ sở y tế và tích hợp trực tiếp không gian trình diễn dữ liệu/mô hình `Meddies/meddies-consultant` phục vụ bảo vệ đề tài.
 
+![Bản đăng ký đề tài Ứng dụng AI cho bài toán Y Tế](/public/assets/aistudio/image_58cff4b2.png)
 
-Đánh giá hiện trạng kho mã nguồn (hiện mới chỉ khởi tạo tệp `README.md` trống) và thiết lập kiến trúc hoàn chỉnh từ đầu cho **Middies Health AI** — nền tảng chatbot y tế đa phương thức, phân loại mức độ khẩn cấp lâm sàng (Triage), giải thích đơn thuốc/kết quả xét nghiệm qua hình ảnh, kiểm tra tương tác thuốc và quản lý hồ sơ sức khỏe cá nhân ổn định, bảo mật.
-
----
-
-## Đánh Giá Hiện Trạng Dự Án (Project Assessment)
-
-> [!NOTE]
-> Qua kiểm tra toàn bộ cây thư mục gốc của dự án, kho lưu trữ hiện chỉ có duy nhất tệp `README.md` (`# middies-heath-ai`) và chưa có khung mã nguồn Frontend/Backend, cấu hình gói (`package.json`), hay kết nối AI. Đây là cơ hội lý tưởng để thiết kế một kiến trúc Full-Stack chuẩn mực ngay từ đầu, tránh nợ kỹ thuật và đảm bảo tính ổn định cao nhất.
-
-### User Review & Các Quyết Định Cốt Lõi Đã Xác Nhận
+## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> Dưới đây là các quyết định sản phẩm đã được xác nhận từ câu trả lời của bạn để định hình kiến trúc hệ thống:
+> Dưới đây là các quyết định kiến trúc và trải nghiệm cốt lõi đã được chốt từ phản hồi của bạn để đảm bảo sản phẩm khớp tuyệt đối với đề cương đăng ký đề tài:
 
-- **Đối tượng phục vụ chính**: Bệnh nhân và người dùng cá nhân tra cứu sức khỏe, cần ngôn ngữ giải thích dễ hiểu, thấu cảm, chính xác và có cảnh báo y khoa rõ ràng.
-- **Bộ 4 tính năng trọng tâm**:
-  1. **Trợ lý Hội thoại & Phân tích Triệu chứng (Symptom Triage)**: Hỏi đáp y tế thông minh kết hợp tự động phân loại mức độ khẩn cấp (Cấp cứu / Cần khám sớm / Theo dõi tại nhà) kèm hướng dẫn hành động.
-  2. **Đọc & Giải thích Đơn thuốc / Xét nghiệm qua Ảnh (Multimodal Medical OCR)**: Tải ảnh chụp đơn thuốc, phiếu xét nghiệm máu/nước tiểu để AI trích xuất chỉ số, đối chiếu ngưỡng bình thường và giải thích ý nghĩa bằng tiếng Việt dễ hiểu.
-  3. **Tra cứu Thuốc & Kiểm tra Tương tác Thuốc (Drug Interaction Checker)**: Kiểm tra độ an toàn khi dùng chung nhiều loại thuốc, cảnh báo xung đột hoạt chất, tác dụng phụ và lưu ý dùng thuốc.
-  4. **Hồ sơ Sức khỏe Cá nhân & Lịch Nhắc Uống Thuốc (Personal Health Profile & Medication Reminders)**: Lưu trữ thông tin cơ bản (nhóm máu, dị ứng, bệnh nền, chỉ số sinh tồn) và lịch nhắc uống thuốc hàng ngày; tự động đưa ngữ cảnh dị ứng/bệnh nền vào phiên tư vấn để cá nhân hóa câu trả lời.
-- **Chiến lược Lưu trữ & Bảo mật**: Lưu trữ cục bộ hoàn toàn trên trình duyệt (`localStorage` có cấu trúc kết hợp tính năng Xuất/Nhập sao lưu tệp JSON), giúp tốc độ phản hồi tức thì, không phụ thuộc kết nối cơ sở dữ liệu bên ngoài và bảo vệ tuyệt đối quyền riêng tư y tế của người dùng.
-
----
-
-## 1. Tổng Quan & Giá Trị Cốt Lõi (Overview & Core Concept)
-
-- **Chức năng chính**: Middies Health AI hoạt động như một trợ lý y tế gia đình trực tuyến 24/7. Người dùng có thể trò chuyện trực tiếp về triệu chứng đang gặp phải, đính kèm hình ảnh phiếu xét nghiệm hoặc toa thuốc để được giải nghĩa chi tiết, kiểm tra chéo các loại thuốc đang uống và theo dõi lịch dùng thuốc gắn liền với hồ sơ bệnh sử cá nhân.
-- **Đối tượng người dùng**: Người bệnh, người chăm sóc người thân trong gia đình, và cá nhân quan tâm đến theo dõi sức khỏe chủ động.
-- **Giá trị khác biệt**:
-  - **Cá nhân hóa an toàn**: Mọi tư vấn của AI đều tự động tham chiếu đến **Dị ứng**, **Bệnh lý nền** và **Thuốc đang sử dụng** trong Hồ sơ Sức khỏe của người dùng để ngăn ngừa rủi ro khuyến nghị sai lệch.
-  - **Phân tầng khẩn cấp minh bạch**: Không trả lời chung chung; mỗi phản hồi triệu chứng đều đi kèm cấu trúc đánh giá mức độ khẩn cấp rõ ràng và cảnh báo các dấu hiệu nguy hiểm ("Red Flags") cần gọi cấp cứu 115 ngay.
+- **Confirmed Decision 1 — Bố cục giao diện bám sát Đề tài & Bảo vệ Khoa học**: Tổ chức giao diện xoay quanh luồng cốt lõi của đề tài (**Hội thoại thu thập triệu chứng → Dự đoán các bệnh liên quan → Thông tin y tế tham khảo & Khuyến nghị cơ sở y tế**), đồng thời bổ sung chuyên mục **"Mô Hình & Dataset Meddies"** ngay trên thanh điều hướng chính để trình diễn trực quan bộ dữ liệu `Meddies/meddies-consultant`, quy trình tiền xử lý chống rò rỉ và kết quả huấn luyện thực nghiệm trước hội đồng. Các công cụ bổ trợ (Quét đơn thuốc OCR, Tra cứu tương tác thuốc, Hồ sơ cá nhân) được nhóm gọn làm tiện ích mở rộng.
+- **Confirmed Decision 2 — Hệ thống Backend Suy luận Chế độ Kép (Dual Inference Backend)**: Hỗ trợ chuyển đổi linh hoạt giữa **(1) Chế độ Suy luận Trực tuyến Kết hợp RAG `Meddies/meddies-consultant` + 7-Stage Clinical Dialogue Engine** (hoạt động ổn định mọi lúc trên Cloud) và **(2) Chế độ Kết nối Trực tiếp FastAPI Qwen Fine-Tuned (`qwen-rag-stack`)** chạy mô hình `Qwen3-1.7B` / `Qwen2.5-7B` LoRA kèm tự động kiểm tra trạng thái `/ready` và cơ chế dự phòng mượt mà.
+- **Confirmed Decision 3 — Bộ 4 Thành phần Kết quả Phân tích Lâm sàng Trực quan**: Trong mỗi phiên tư vấn, giao diện hiển thị đồng bộ:
+  1. **Tiến trình thu thập triệu chứng 3 bước** (`Tiếp nhận triệu chứng` → `Hỏi bổ sung làm rõ` → `Dự đoán & Khuyến nghị`) kèm các gợi ý câu hỏi/câu trả lời nhanh từ Question Planner.
+  2. **Danh sách các bệnh có khả năng liên quan (`Candidate Conditions`)** kèm mã `ICD-10`, mức độ tương khớp triệu chứng, bằng chứng ủng hộ (`Dựa trên`), thông tin cần làm rõ thêm (`Chưa xác nhận`) và phân tầng mức độ chăm sóc.
+  3. **Thẻ thông tin y tế tham khảo chi tiết về bệnh & Khuyến nghị cơ sở y tế** (cơ chế bệnh sinh dễ hiểu, dấu hiệu cảnh báo đỏ cần đi khám ngay, chuyên khoa gợi ý và tuyên bố miễn trừ không thay thế chẩn đoán bác sĩ).
+  4. **Trình khám phá mẫu hội thoại tương đồng từ tập dữ liệu `Meddies/meddies-consultant`** ngay trong phiên tư vấn và trong trang nghiên cứu chuyên biệt.
 
 ---
 
-## 2. Trải Nghiệm Người Dùng & Thiết Kế Giao Diện (UX & Visual Design)
+## 1. Overview & Core Concept
 
-- **Luồng trải nghiệm chính (Key User Flows)**:
-  1. **Luồng Tư vấn & Phân loại Triệu chứng**: Người dùng chọn triệu chứng gợi ý nhanh hoặc nhập mô tả (có thể đính kèm ảnh) $\rightarrow$ Hệ thống gửi kèm ngữ cảnh Hồ sơ Sức khỏe (dị ứng, tuổi, bệnh nền) lên máy chủ AI $\rightarrow$ Trả về câu trả lời có cấu trúc gồm: *Đánh giá sơ bộ*, *Mức độ khẩn cấp (Triage Level)*, *Các câu hỏi làm rõ*, *Hướng dẫn chăm sóc tại nhà* và *Khi nào cần gặp bác sĩ ngay*.
-  2. **Luồng Phân tích Đơn thuốc / Xét nghiệm qua Ảnh**: Người dùng tải lên ảnh chụp đơn thuốc hoặc bảng xét nghiệm $\rightarrow$ AI trích xuất thành bảng dữ liệu có cấu trúc (Tên chỉ số / Tên thuốc, Giá trị/Liều dùng, Trạng thái Bình thường/Cao/Thấp, Giải thích chi tiết) $\rightarrow$ Cho phép lưu trực tiếp thuốc từ đơn vào Lịch nhắc uống thuốc chỉ với 1 cú nhấp.
-  3. **Luồng Kiểm tra Tương tác Thuốc**: Người dùng nhập từ 2 loại thuốc trở lên (hoặc chọn nhanh từ danh sách thuốc đang uống trong hồ sơ) $\rightarrow$ Hệ thống phân tích cơ chế tương tác giữa các hoạt chất, mức độ nghiêm trọng (An toàn / Thận trọng / Nghiêm trọng) và khuyến nghị cách dùng.
-  4. **Luồng Quản lý Hồ sơ & Nhắc Thuốc**: Cập nhật thông tin chiều cao, cân nặng, BMI tự động, nhóm máu, tiền sử dị ứng, bệnh mãn tính; theo dõi danh sách cử uống thuốc trong ngày (Sáng / Trưa / Chiều / Tối) với thao tác đánh dấu đã uống trực quan.
-
-- **Định hướng Thẩm mỹ & Giao diện (Visual Identity & Theme)**:
-  - *Phong cách chủ đạo*: **Clinical Precision & Warm Empathy** — Sự kết hợp giữa độ chuẩn xác, sạch sẽ của hệ thống y khoa hiện đại (SaaS/Clinical Dashboard) và sự ấm áp, an tâm dành cho bệnh nhân.
-  - *Bảng màu (60-30-10 Color Discipline)*:
-    - **60% Nền trung tính sáng sạch**: Trắng sứ y tế và xám lạnh dịu mắt (`#F8FAFC` / `bg-slate-50` và `#FFFFFF` / `bg-white`), giúp đọc văn bản dài và bảng chỉ số xét nghiệm không bị mỏi mắt.
-    - **30% Bề mặt cấu trúc & Viền mảnh**: Xám đá phiến (`#E2E8F0` / `border-slate-200`, văn bản `#0F172A` / `text-slate-900` và `#475569` / `text-slate-600`).
-    - **10% Điểm nhấn & Trạng thái Y khoa (Semantic Triage Colors)**:
-      - Xanh Ngọc Y Tế (`#0D9488` / `teal-600`): Màu hành động chính, tạo cảm giác tin cậy và bình tĩnh.
-      - Xanh Lá An Toàn (`#16A34A` / `emerald-600`): Chỉ số bình thường / Tự theo dõi tại nhà.
-      - Vàng Hổ Phách Cảnh Báo (`#D97706` / `amber-600`): Chỉ số cần lưu ý / Nên đặt lịch khám chuyên khoa.
-      - Đỏ Lâm Sàng Khẩn Cấp (`#DC2626` / `red-600`): Dấu hiệu nguy hiểm / Tương tác thuốc nghiêm trọng / Cần cấp cứu y tế (115).
-  - *Hệ thống Phông chữ (Typography)*:
-    - Tiêu đề & Điều hướng: `Plus Jakarta Sans` — hiện đại, rõ ràng, tạo cảm giác chuyên nghiệp.
-    - Nội dung tư vấn & Y văn: `Public Sans` hoặc `DM Sans` — tối ưu độ dễ đọc cho tiếng Việt ở kích thước 14px–16px.
-    - Số liệu sinh tồn, Liều lượng & Chỉ số xét nghiệm: `JetBrains Mono` (`tabular-nums`) — đảm bảo các con số mg, ml, mmol/L, huyết áp, nhịp tim thẳng hàng tuyệt đối.
-  - *Bố cục Không gian (Workspace Layout)*:
-    - Khung nhìn Desktop chuẩn 1440px với **Thanh điều hướng bên trái (Sidebar 260px)** để chuyển đổi mượt mà giữa 4 phân khu (*Trợ lý Tư vấn AI*, *Phân tích Đơn thuốc & Xét nghiệm*, *Tra cứu & Tương tác Thuốc*, *Hồ sơ Sức khỏe & Lịch Thuốc*) và quản lý danh sách phiên hội thoại.
-    - **Thanh Top Bar chuẩn 3 vùng**: Tên thương hiệu & Đường dẫn phân khu bên trái — Các liên kết chuyển nhanh ở giữa — Nút hành động khẩn cấp (Hướng dẫn Sơ cứu / Gọi 115 nhanh & Xuất Hồ sơ) bên phải.
+- **What It Does**: Hệ thống đóng vai trò trợ lý sàng lọc sức khỏe ban đầu bằng tiếng Việt. Khi người dùng mô tả triệu chứng bằng ngôn ngữ tự nhiên, hệ thống không vội vàng kết luận ngay ở lượt đầu mà tiến hành **hỏi bệnh đa lượt (Multi-turn History Taking)** để thu thập các thông tin còn thiếu (vị trí, thời gian khởi phát, mức độ, tính chất, triệu chứng đi kèm, tiền sử). Khi đã đủ căn cứ hoặc phát hiện dấu hiệu nguy hiểm, hệ thống đưa ra **danh sách các bệnh có khả năng liên quan**, **thông tin y tế tham khảo**, và **khuyến nghị đến cơ sở y tế phù hợp**.
+- **Target Audience / Persona**:
+  - **Người bệnh & người dùng cá nhân**: Cần công cụ sàng lọc triệu chứng ban đầu bằng tiếng Việt tự nhiên, dễ hiểu, an toàn, biết khi nào cần đi khám chuyên khoa hoặc cấp cứu 115.
+  - **Hội đồng chấm khóa luận / đề tài nghiên cứu**: Cần kiểm chứng tính hoàn chỉnh của cả 3 thành phần trong đề cương đăng ký: **(1) Mô hình AI xử lý hội thoại y tế (`Meddies/meddies-consultant`)**, **(2) Hệ thống Backend phục vụ suy luận mô hình**, và **(3) Giao diện Web/App tương tác người dùng**.
+- **Key Value**: Khắc phục nhược điểm của các LLM thông thường (thường liệt kê bệnh quá sớm hoặc bỏ sót dấu hiệu cấp cứu) bằng kiến trúc kết hợp **7-Stage Clinical Dialogue Engine + Fine-tuned Model / RAG trên `Meddies/meddies-consultant`**, đảm bảo tỷ lệ đặt câu hỏi khai thác bệnh sử đạt chuẩn lâm sàng và an toàn tuyệt đối trước các ca cấp cứu.
 
 ---
 
-## 3. Các Quyết Định Kỹ Thuật & Đánh Đổi (Key Product Decisions & Trade-Offs)
+## 2. User Experience & Visual Design
 
-- **Quyết định 1: Kiến trúc Proxy Máy chủ Bảo mật cho Gemini API (`Express + Vite Full-Stack`)**
-  - *Cách tiếp cận*: Toàn bộ lệnh gọi mô hình AI (`@google/genai`) được thực thi tại tầng máy chủ (`server.ts`) thông qua các API nội bộ (`/api/health/*`). Trình duyệt chỉ gửi yêu cầu và nhận kết quả JSON/Stream.
-  - *Lý do*: Bảo vệ tuyệt đối khóa API, kiểm soát chặt chẽ System Prompt y khoa (Medical Safety Guardrails), chuẩn hóa định dạng đầu ra (`responseSchema`) và xử lý lỗi tập trung ổn định.
-- **Quyết định 2: Sử dụng Đầu ra Có Cấu trúc (`Structured JSON Schema`) Kết hợp Markdown Y khoa**
-  - *Cách tiếp cận*: Thay vì chỉ trả về đoạn văn bản tự do dễ gây bỏ sót thông tin quan trọng, các API phân tích triệu chứng, đọc ảnh xét nghiệm và kiểm tra tương tác thuốc sử dụng `responseSchema` của `gemini-3.8-flash` để luôn trả về dữ liệu phân tách rõ: Mức độ khẩn cấp (`triageLevel`), Dấu hiệu cờ đỏ (`redFlags`), Bảng chỉ số (`metrics`), và Lời khuyên chi tiết.
-  - *Lý do*: Giúp giao diện hiển thị trực quan các hộp cảnh báo mức độ khẩn cấp, bảng đối chiếu chỉ số xét nghiệm và nút thêm thuốc tự động mà không bao giờ bị lỗi định dạng.
-- **Quyết định 3: Tiêm Ngữ cảnh Hồ sơ Sức khỏe Tự động (Context-Aware Medical Prompting)**
-  - *Cách tiếp cận*: Mỗi khi người dùng đặt câu hỏi hoặc kiểm tra thuốc, hệ thống tự động đính kèm tóm tắt Hồ sơ Sức khỏe cục bộ (tuổi, giới tính, dị ứng thuốc/thực phẩm, bệnh nền, thuốc đang dùng) vào yêu cầu gửi lên AI.
-  - *Lý do*: Ngăn chặn việc AI gợi ý hoạt chất mà người dùng bị dị ứng hoặc chống chỉ định với bệnh lý nền (ví dụ: đau dạ dày, suy thận, mang thai).
+### Key User Flows
+
+1. **Luồng 1 — Tư vấn Hội thoại & Dự đoán Bệnh Liên quan (Trọng tâm Đề tài)**:
+   - **Bước 1 (Tiếp nhận triệu chứng)**: Người dùng nhập triệu chứng tự nhiên (ví dụ: *"Tôi bị đau đầu âm ỉ 2 ngày nay kèm hơi buồn nôn"*) hoặc chọn kịch bản mẫu từ tập kiểm thử `Meddies/meddies-consultant`.
+   - **Bước 2 (Hỏi bổ sung thu thập thông tin)**: Thanh tiến trình 3 giai đoạn ở đầu khung tư vấn chuyển sang giai đoạn `2. Hỏi bổ sung thu thập thông tin`. Trợ lý AI đặt 1–2 câu hỏi trọng tâm để làm rõ các thông tin còn thiếu (ví dụ: vị trí đau một bên hay hai bên, có sốt hay cứng cổ không, có nhạy cảm ánh sáng không) kèm các nút chọn trả lời nhanh cho người dùng.
+   - **Bước 3 (Phân tích & Dự đoán các bệnh có khả năng liên quan)**: Khi đã thu thập đủ các trường thông tin cốt lõi, hệ thống cập nhật cột **Bảng Phân Tích Sàng Lọc Y Khoa** bên phải với:
+     - **Hồ sơ triệu chứng đã thu thập (DST)**: Tóm tắt rõ các triệu chứng dương tính, triệu chứng âm tính đã loại trừ, thời gian, vị trí, mức độ.
+     - **Danh sách các bệnh có khả năng liên quan**: Hiển thị các bệnh lý nghi ngờ (ví dụ: *Đau nửa đầu Migraine — ICD-10: G43*, *Đau đầu căng thẳng — ICD-10: G44.2*) kèm thanh mức độ khớp bằng chứng, danh sách triệu chứng ủng hộ, yếu tố chưa xác nhận và nhãn mức độ xử trí (`Theo dõi tại nhà`, `Khám trong 1–2 ngày`, `Khám ngay hôm nay`).
+     - **Thẻ thông tin y tế tham khảo & Khuyến nghị cơ sở y tế**: Cung cấp mô tả y khoa dễ hiểu về từng bệnh, hướng dẫn theo dõi ban đầu, chuyên khoa cần đăng ký khám (ví dụ: *Chuyên khoa Nội Thần kinh*) và danh sách dấu hiệu cảnh báo cần đi cấp cứu 115.
+     - **Đối chiếu mẫu hội thoại `Meddies/meddies-consultant`**: Hiển thị các đoạn hội thoại bác sĩ – bệnh nhân tương đồng trong tập dữ liệu huấn luyện để minh họa căn cứ tham khảo.
+
+2. **Luồng 2 — Trình diễn Mô hình AI & Dataset `Meddies/meddies-consultant` (Phục vụ Bảo vệ Đề tài)**:
+   - Người dùng hoặc giảng viên phản biện mở tab **"Mô Hình & Dataset Meddies"** trên thanh điều hướng chính:
+     - **Khám phá Dataset `Meddies/meddies-consultant`**: Thống kê chi tiết bộ dữ liệu gốc (`58.064` hội thoại tiếng Việt, revision `05428709a...`, `1.236` nhóm bệnh `target_disease`), bộ lọc làm sạch 2 tầng (`Standard: 51.320` hội thoại và `Strict: 33.237` hội thoại), biểu đồ phân bố lý do loại bỏ (`role_inversion`, `unclosed_reasoning`, `medication_dose`, `emergency_not_escalated`) và cơ chế chia tập `80/10/10` theo nhóm bệnh chống rò rỉ dữ liệu (`0` nhóm bệnh trùng lặp).
+     - **Trình duyệt Mẫu Hội thoại Thực tế (Interactive Dataset Explorer)**: Cho phép tìm kiếm, lọc theo nhóm bệnh (Hô hấp, Tiêu hóa, Thần kinh, Tim mạch, Da liễu, Cơ xương khớp, Tiết niệu) và xem chi tiết từng lượt hỏi – đáp giữa Bác sĩ và Bệnh nhân trong tập `Meddies/meddies-consultant`, đồng thời có nút **"Chạy thử kịch bản này trên Chatbot"** chỉ với 1 cú nhấp chuột.
+     - **Kết quả Thực nghiệm & So sánh Mô hình (`E1 Base` vs `E2 LoRA Standard` vs `E3 LoRA Strict` vs `P0 Planner`)**: Hiển thị bảng đối chiếu trực quan các chỉ số đánh giá từ quá trình huấn luyện QLoRA (`Validation Loss` giảm từ `2.263` xuống `1.376`, tỷ lệ lượt có câu hỏi bổ sung tăng từ `29.8%` lên `88.1%`, giảm lỗi nêu bệnh sớm từ `44.1%` xuống `8.8%`, cùng kết quả kiểm thử `90/90` ca an toàn cấp cứu đạt `Recall 1.00`).
+     - **Cấu hình Backend Suy luận Mô hình**: Cho phép chuyển đổi trực tiếp giữa **Cloud Hybrid Inference (Gemini + Meddies RAG)** và **Local Qwen Fine-Tuned FastAPI (`http://localhost:8000`)** kèm kiểm tra trạng thái kết nối thời gian thực.
+
+3. **Luồng 3 — Các Tiện ích Lâm sàng Mở rộng**:
+   - Giữ nguyên tính năng **Quét Đơn Thuốc & Xét Nghiệm (OCR)**, **Kiểm Tra Tương Tác Thuốc (kèm Autocomplete tên thuốc)**, **Hồ Sơ Sức Khỏe Cá Nhân** và **Cẩm Nang Cấp Cứu 115** để hệ thống vừa bám sát đề cương nghiên cứu vừa hoàn chỉnh như một sản phẩm thực tiễn.
+
+### Visual Identity & Theme
+
+- **Aesthetic Direction**: **Clinical Precision & Academic Clarity** — Phong cách y tế số chuẩn mực kết hợp tính minh bạch khoa học, truyền tải sự tin cậy của một hệ thống hỗ trợ quyết định lâm sàng (Clinical Decision Support) và một công trình nghiên cứu AI nghiêm túc.
+- **Color Palette & Mood**:
+  - Bề mặt nền sáng sạch (`#F8FAFC` Slate-50) và khung nội dung trắng tinh khiết (`#FFFFFF`) với đường viền mảnh `1px solid #E2E8F0`.
+  - Màu nhấn chủ đạo: **Clinical Teal (`#0F766E` / `#0D9488`)** cho các tác vụ tư vấn và định hướng y khoa; **Academic Indigo (`#1E293B` / `#334155`)** cho khu vực phân tích mô hình và dữ liệu `Meddies/meddies-consultant`.
+  - Màu ngữ nghĩa phân tầng mức độ chăm sóc:
+    - `Theo dõi & Chăm sóc ban đầu`: Emerald (`#15803D`, nền `#F0FDF4`)
+    - `Cần theo dõi sát`: Amber (`#B45309`, nền `#FFFBEB`)
+    - `Khuyến nghị khám chuyên khoa sớm (1–2 ngày)`: Orange (`#C2410C`, nền `#FFF7ED`)
+    - `Cấp cứu y tế khẩn cấp (115)`: Crimson (`#B91C1C`, nền `#FEF2F2`)
+- **Typography & Hierarchy**:
+  - Tiêu đề: `Plus Jakarta Sans` (SemiBold/Bold, hỗ trợ tiếng Việt sắc nét).
+  - Nội dung hội thoại & văn bản tham khảo y khoa: `Be Vietnam Pro` (`14px–15px`, chiều cao dòng `1.6` dễ đọc).
+  - Số liệu thống kê, tỷ lệ khớp triệu chứng, mã `ICD-10`, kết quả benchmark: `JetBrains Mono` với `font-variant-numeric: tabular-nums`.
+- **Component Styling & Layout**:
+  - Tuân thủ kỷ luật **Top Bar 3 Vùng**: Trái (Nhận diện đề tài **"Ứng dụng AI cho bài toán Y Tế — Meddies Health AI"**), Giữa (Thanh chuyển phân hệ), Phải (Chỉ báo chế độ Backend suy luận & Nút Cấp cứu 115).
+  - Bố cục màn hình Tư vấn chia 2 cột cân đối trên Desktop (`7 cột` cho Hội thoại & Tiến trình hỏi bệnh + `5 cột` cho Bảng Dự đoán Bệnh Liên quan, Thông tin Tham khảo & Khuyến nghị Cơ sở Y tế).
 
 ---
 
-## 4. Kiến Trúc Hệ Thống & Luồng Dữ Liệu (Technical Architecture & Data Strategy)
+## 3. Key Product Decisions & Trade-Offs
 
-### Sơ đồ Kiến trúc Tổng thể
+- **Decision 1 — Kết hợp Planner Luật Lâm sàng (7-Stage DST) với Mô hình Sinh Ngôn ngữ (LLM / Fine-tuned Qwen)**:
+  - *Chosen Approach*: Mọi tin nhắn của người dùng đều đi qua bộ máy **7-Stage Clinical Dialogue Engine** (Sàng lọc cấp cứu → Kiểm tra phạm vi y tế → Trích xuất triệu chứng DST → Xác định thông tin thiếu → Lập kế hoạch câu hỏi bổ sung → Xếp hạng các bệnh có khả năng liên quan) trước và sau khi mô hình AI sinh câu trả lời.
+  - *Why*: Kết quả thực nghiệm trên tập `Meddies/meddies-consultant` chứng minh mô hình thuần túy có thể bỏ sót dấu hiệu cấp cứu hoặc hỏi dồn quá nhiều câu; sự kết hợp giữa **Dialogue State Tracker + Question Planner** và **Mô hình AI** giúp đảm bảo hệ thống luôn hỏi đúng trọng tâm, đưa ra các bệnh liên quan có căn cứ triệu chứng rõ ràng và đạt `Recall 100%` trên bộ kiểm thử cấp cứu.
+  - *Alternatives Considered*: Chỉ gọi prompt LLM đơn thuần — bị loại bỏ vì dễ kết luận bệnh quá sớm ở lượt 1 và thiếu tính nhất quán khi bảo vệ đề tài.
+- **Decision 2 — Kiến trúc Backend Suy luận Chế độ Kép (Cloud Hybrid + Local FastAPI Qwen Adapter)**:
+  - *Chosen Approach*: Backend Express (`/api/health/chat` và `/api/meddies/*`) vừa tích hợp bộ máy suy luận trực tuyến kèm RAG mẫu hội thoại `Meddies/meddies-consultant`, vừa hỗ trợ proxy/chuyển tiếp trực tiếp sang cổng FastAPI (`http://localhost:8000/api/v1/consultation`) của mô hình Qwen fine-tuned khi người dùng bật server GPU cục bộ.
+  - *Why*: Giúp ứng dụng luôn hoạt động tức thì trên trình duyệt phục vụ demo mọi lúc, đồng thời liên kết chặt chẽ với mã nguồn huấn luyện/suy luận Qwen LoRA có sẵn trong dự án.
 
+---
+
+## 4. Technical Architecture & Data Strategy *(Technical Reference)*
+
+### Architecture & Component Diagram
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                  GIAO DIỆN WEB/APP: ỨNG DỤNG AI CHO BÀI TOÁN Y TẾ                        │
+│  ┌────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ Top Bar: Thương hiệu Đề tài │ [Tư Vấn & Dự Đoán Bệnh] [Mô Hình & Dataset Meddies]  │  │
+│  │                             │ [Quét Đơn/XN] [Tương Tác Thuốc] [Hồ Sơ]  │ [115 SOS] │  │
+│  └────────────────────────────────────────────────────────────────────────────────────┘  │
+│                 │                                                  │                     │
+│                 ▼                                                  ▼                     │
+│  ┌─────────────────────────────────────────┐    ┌─────────────────────────────────────┐  │
+│  │ PHÂN HỆ 1: TƯ VẤN & SÀNG LỌC TRIỆU CHỨNG│    │ PHÂN HỆ 2: MÔ HÌNH & DATASET MEDDIES│  │
+│  │ • Thanh Tiến Trình 3 Giai Đoạn Khai Thác│    │ • Thống Kê & Pipeline Làm Sạch      │  │
+│  │   (Tiếp nhận -> Hỏi bổ sung -> Dự đoán) │    │   Meddies/meddies-consultant        │  │
+│  │ • Khung Hội Thoại Tự Nhiên + Gợi Ý Trả  │    │ • Trình Khám Phá Mẫu Hội Thoại Thực │  │
+│  │   Lời Nhanh Từ Question Planner         │    │   Tế + Nút "Chạy Thử Trên Chatbot"  │  │
+│  │ • Bảng Dự Đoán Các Bệnh Có Khả Năng     │    │ • Bảng Benchmark Thực Nghiệm        │  │
+│  │   Liên Quan (Tỷ lệ khớp, ICD-10, Bằng   │    │   (E1 Base vs E2/E3 LoRA vs P0)     │  │
+│  │   chứng ủng hộ, Thông tin chưa xác nhận)│    │ • Bộ Chuyển Đổi Chế Độ Suy Luận     │  │
+│  │ • Thẻ Thông Tin Y Tế Tham Khảo Về Bệnh  │    │   (Cloud Hybrid RAG <-> Qwen LoRA)  │  │
+│  │ • Khuyến Nghị Cơ Sở Y Tế & Chuyên Khoa  │    └─────────────────────────────────────┘  │
+│  └────────────────────┬────────────────────┘                                             │
+└───────────────────────┼──────────────────────────────────────────────────────────────────┘
+                        │  HTTP JSON (/api/health/chat, /api/meddies/samples)
+                        ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                 HỆ THỐNG BACKEND PHỤC VỤ SUY LUẬN MÔ HÌNH (SERVER GATEWAY)               │
+│                                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ TẦNG 1: 7-STAGE CLINICAL DIALOGUE ENGINE & MEDDIES KNOWLEDGE BASE                  │  │
+│  │ 1. Emergency Red-Flag Router (90 ca chuẩn)   4. Missing-Information Analyzer       │  │
+│  │ 2. Medical Domain & Injection Guardrail      5. Follow-up Question Planner (P0)    │  │
+│  │ 3. Dialogue State Tracker (DST 8 nhóm bệnh)  6. Candidate Condition Scorer (26 bệnh│  │
+│  └───────────────────────────────────────┬────────────────────────────────────────────┘  │
+│                                          │                                               │
+│                     ┌────────────────────┴────────────────────┐                          │
+│                     ▼                                         ▼                          │
+│  ┌──────────────────────────────────────┐  ┌──────────────────────────────────────────┐  │
+│  │ CHẾ ĐỘ A: CLOUD HYBRID MEDDIES RAG   │  │ CHẾ ĐỘ B: LOCAL QWEN FINE-TUNED BACKEND  │  │
+│  │ • Truy xuất mẫu hội thoại tương đồng │  │ • Kết nối FastAPI (/api/v1/consultation) │  │
+│  │   từ tập Meddies/meddies-consultant  │  │ • Suy luận Qwen3-1.7B / Qwen2.5-7B LoRA  │  │
+│  │ • Suy luận Gemini 3.8 Flash theo     │  │   đã huấn luyện trên Meddies-consultant  │  │
+│  │   đúng cấu trúc JSON sàng lọc y tế   │  │ • Hybrid RAG (BM25 + ChromaDB bge-m3)    │  │
+│  └──────────────────────────────────────┘  └──────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                        TRÌNH DUYỆT NGƯỜI DÙNG (React + TypeScript)               │
-│                                                                                  │
-│  ┌──────────────────────┐   ┌─────────────────────────────────────────────────┐  │
-│  │ Thanh Điều Hướng Bên │   │ Khu Vực Làm Việc Chính (Main Viewport)          │  │
-│  │ (Sidebar Navigation) │   │                                                 │  │
-│  │                      │   │  1. Trợ Lý Tư Vấn & Phân Loại Triệu Chứng       │  │
-│  │ • Phiên trò chuyện   │   │     (Chat đa phương thức + Triage Cảnh báo)     │  │
-│  │ • 4 Phân khu y tế    │   │  2. Phân Tích Đơn Thuốc & Xét Nghiệm (OCR)      │  │
-│  │ • Tóm tắt Hồ sơ      │   │     (Tải ảnh -> Bảng chỉ số -> Lưu lịch thuốc)  │  │
-│  │   & Nhắc thuốc hôm   │   │  3. Tra Cứu Thuốc & Kiểm Tra Tương Tác          │  │
-│  │   nay                │   │     (Đối chiếu đa hoạt chất & cảnh báo xung đột)│  │
-│  │ • Cẩm nang Cấp cứu   │   │  4. Hồ Sơ Sức Khỏe & Lịch Nhắc Uống Thuốc       │  │
-│  │   115 & Sao lưu JSON │   │     (Chỉ số sinh tồn, dị ứng, theo dõi cử thuốc)│  │
-│  └──────────┬───────────┘   └────────────────────────┬────────────────────────┘  │
-│             │                                        │                           │
-│             ▼                                        ▼                           │
-│  ┌────────────────────────────────────────────────────────────────────────────┐  │
-│  │         Bộ Quản Lý Trạng Thái & Lưu Trữ Cục Bộ (Local Health Store)        │  │
-│  │  • HealthProfile (Tuổi, Nhóm máu, BMI, Dị ứng, Bệnh nền, Chỉ số sinh tồn)  │  │
-│  │  • MedicationSchedule (Danh sách thuốc, liều lượng, giờ uống, trạng thái)  │  │
-│  │  • ChatSessions & MedicalLabRecords (Lịch sử tư vấn & kết quả phân tích)   │  │
-│  └──────────────────────────────────────┬─────────────────────────────────────┘  │
-└─────────────────────────────────────────┼────────────────────────────────────────┘
-                                          │ HTTP POST (/api/health/*)
-                                          │ + Ngữ cảnh Hồ sơ Sức khỏe & Hình ảnh Base64
-                                          ▼
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                     MÁY CHỦ ỨNG DỤNG (Express Server - Port 3000)                │
-│                                                                                  │
-│  ┌────────────────────────────────────────────────────────────────────────────┐  │
-│  │                Tầng Điều Phối & Bảo Toàn Y Khoa (API Routes)               │  │
-│  │  • POST /api/health/chat       : Tư vấn triệu chứng + Đánh giá Triage      │  │
-│  │  • POST /api/health/analyze-doc: Đọc ảnh đơn thuốc / phiếu xét nghiệm      │  │
-│  │  • POST /api/health/interactions: Phân tích tương tác thuốc & chống chỉ định│  │
-│  └──────────────────────────────────────┬─────────────────────────────────────┘  │
-│                                         │ @google/genai SDK (gemini-3.8-flash)   │
-│                                         ▼                                        │
-│  ┌────────────────────────────────────────────────────────────────────────────┐  │
-│  │         Google Gemini AI + Hệ Thống Quy Tắc An Toàn Y Khoa (Guardrails)    │  │
-│  └────────────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
 
-### Mô hình Dữ liệu Cục bộ (`LocalStorage` Schema)
+### Data Model & State
 
-1. **`PatientProfile` (Hồ sơ Sức khỏe Cá nhân)**:
-   - Thông tin cơ bản: Họ tên, Năm sinh, Giới tính, Nhóm máu, Chiều cao (cm), Cân nặng (kg).
-   - Danh sách cảnh báo y khoa: `allergies` (Dị ứng thuốc/thức ăn), `chronicConditions` (Bệnh lý nền như Cao huyết áp, Tiểu đường, Đau dạ dày), `emergencyContact` (Số điện thoại người thân).
-   - Nhật ký sinh tồn (`vitalLogs`): Huyết áp tâm thu/tâm trương, Nhịp tim, Đường huyết, Nhiệt độ cơ thể theo thời gian.
-2. **`MedicationItem` (Lịch Nhắc Uống Thuốc)**:
-   - Tên thuốc, Hàm lượng, Liều dùng, Thời điểm uống (`Sáng`, `Trưa`, `Chiều`, `Tối`), Ghi chú (Trước/Sau ăn), và Danh sách đánh dấu hoàn thành theo ngày (`takenDates`).
-3. **`ChatSession` & `ChatMessage` (Phiên Trò chuyện Y tế)**:
-   - Lưu lịch sử các cuộc trò chuyện độc lập, cho phép tạo phiên mới, đổi tên, xóa phiên hoặc tìm kiếm lại tư vấn cũ. Mỗi tin nhắn của AI lưu kèm metadata phân loại khẩn cấp (`LOW` | `MEDIUM` | `HIGH` | `EMERGENCY`), các dấu hiệu cần lưu ý và câu hỏi gợi ý tiếp theo.
-4. **`LabAndPrescriptionRecord` (Hồ sơ Phân tích Ảnh Y tế)**:
-   - Lưu trữ kết quả đọc đơn thuốc hoặc phiếu xét nghiệm máu/sinh hóa gồm: Loại tài liệu, Tóm tắt tổng quan, Bảng danh sách chỉ số/thuốc trích xuất được, và Khuyến nghị theo dõi.
+1. **Cấu trúc Kết quả Phân tích & Dự đoán Bệnh (`TriageResponse` & `CandidateHypothesis`)**:
+   - `conversationStage`: `"COLLECTING_SYMPTOMS"` | `"FOLLOW_UP_QUESTIONING"` | `"DISEASE_PREDICTION_READY"` | `"EMERGENCY_ALERT"`
+   - `candidateDiseases`: Danh sách các bệnh có khả năng liên quan, mỗi bệnh gồm:
+     - `name`: Tên bệnh lý (ví dụ: *Viêm dạ dày – tá tràng cấp*, *Đau nửa đầu Migraine*, *Sốt xuất huyết Dengue*)
+     - `icd10`: Mã phân loại quốc tế (`K29`, `G43`, `A97`...)
+     - `matchScore`: Điểm độ khớp triệu chứng (`0–100%` dựa trên trọng số triệu chứng đã xác nhận)
+     - `supportingEvidence`: Các triệu chứng của người bệnh khớp với bệnh lý này
+     - `missingOrUnconfirmed`: Các dấu hiệu cần hỏi hoặc xét nghiệm thêm để phân biệt
+     - `referenceInfo`: Thông tin y tế tham khảo về bệnh (nguyên nhân thường gặp, diễn tiến, cách chăm sóc ban đầu)
+     - `careLevel`: `"routine"` (Theo dõi tại nhà) | `"soon"` (Khám trong 1–2 ngày) | `"urgent"` (Khám ngay trong ngày / Cấp cứu)
+     - `recommendedFacility`: Khuyến nghị cơ sở y tế & chuyên khoa phù hợp (ví dụ: *Phòng khám/Khoa Nội Tiêu hóa*, *Khoa Cấp cứu — Bệnh viện đa khoa*)
+2. **Kho mẫu hội thoại chuẩn `Meddies/meddies-consultant` (`MeddiesConversationSample`)**:
+   - Lưu trữ tập mẫu tiêu biểu trích từ các nhóm bệnh của bộ dữ liệu `Meddies/meddies-consultant` (revision `05428709a7572f6f0d4aa5045e6ba255fa85af51`) kèm metadata: `conversationId`, `targetDisease`, `clinicalGroup`, `turnsCount`, `cleaningStatus` (`strict` / `standard`), `extractedSlots`, và danh sách các lượt hội thoại `messages` để phục vụ cả truy xuất RAG lẫn trình diễn trên giao diện.
 
-### Ánh xạ Tương tác & Xử lý Trạng thái (Interactive Component & State Mapping)
+### Interactive Component & State Mapping
 
-- **Bộ khung An toàn & Tuyên bố Miễn trừ Y khoa (Medical Disclaimer & Emergency Modal)**:
-  - Luôn hiển thị thông báo rõ ràng rằng AI hỗ trợ cung cấp thông tin tham khảo, không thay thế chẩn đoán trực tiếp của bác sĩ.
-  - Khi AI phát hiện triệu chứng thuộc nhóm `EMERGENCY` (như đau thắt ngực, khó thở cấp, dấu hiệu đột quỵ FAST, phản vệ), giao diện lập tức kích hoạt khung cảnh báo Đỏ Lâm Sàng nổi bật kèm hướng dẫn sơ cứu tại chỗ và nút gọi khẩn cấp 115.
-- **Trình tải ảnh Đơn thuốc / Xét nghiệm Đa năng**:
-  - Hỗ trợ kéo thả ảnh, chọn tệp từ thiết bị hoặc chọn nhanh **Mẫu Đơn thuốc / Phiếu xét nghiệm mẫu có sẵn** để người dùng có thể trải nghiệm và kiểm thử tính năng ngay lập tức.
-  - Sau khi AI bóc tách danh sách thuốc từ ảnh chụp đơn thuốc, hiển thị nút **"Thêm vào Lịch nhắc thuốc"** ngay trên từng dòng thuốc để đồng bộ tự động sang tab Hồ sơ & Lịch thuốc.
-- **Cơ chế Chịu lỗi & Ổn định Hệ thống (Resilience & Error Recovery)**:
-  - Kiểm tra kích thước và định dạng ảnh trước khi gửi; tự động nén ảnh lớn trên trình duyệt (`canvas` resize) để đảm bảo tốc độ gửi API nhanh và không vượt giới hạn tải trọng.
-  - Trạng thái chờ (Skeleton/Loading) hiển thị rõ từng bước xử lý của AI; nếu kết nối mạng gián đoạn, giữ nguyên nội dung người dùng đã nhập kèm nút **"Thử gửi lại"** mà không làm mất dữ liệu.
-  - Hỗ trợ **Xuất hồ sơ ra tệp `.json` (Backup)** và **Khôi phục từ tệp `.json` (Restore)** cũng như **In / Xuất Báo cáo Tóm tắt Sức khỏe** để người dùng mang theo khi đi khám bác sĩ.
+- **Thanh Tiến trình Khai thác Triệu chứng 3 Giai đoạn**: Tự động cập nhật theo số lượng trường thông tin đã thu thập trong `dialogueState`. Khi ở giai đoạn 1–2, hệ thống làm nổi bật hộp **"Câu hỏi bổ sung cần làm rõ"** với các nút chọn nhanh (ví dụ: *"Đau âm ỉ hay từng cơn?"*, *"Dưới 24 giờ"*, *"Khoảng 1–3 ngày"*, *"Không có sốt"*).
+- **Bảng Dự đoán Các Bệnh Có Khả Năng Liên Quan & Thông tin Tham khảo**: Cho phép người dùng nhấp vào từng bệnh lý dự đoán để mở rộng thẻ **"Thông tin y tế tham khảo & Khuyến nghị thăm khám"** (bao gồm: Giải thích bệnh lý, Dấu hiệu cần đến cơ sở y tế ngay, Chuyên khoa khuyến nghị, và Nguồn tham khảo Bộ Y tế / ICD-10).
+- **Nút "Chạy thử kịch bản Meddies trên Chatbot"**: Từ tab **Mô Hình & Dataset Meddies**, khi người dùng chọn một ca hội thoại mẫu trong tập dữ liệu và nhấn nút thử nghiệm, hệ thống tự động chuyển sang màn hình **Tư vấn & Sàng lọc** và nạp triệu chứng mở đầu của bệnh nhân đó vào cuộc hội thoại để trình diễn trực tiếp.

@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# Python & ML artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+chroma_db/
+models/
+
+# Logs & OS
+*.log
+.DS_Store

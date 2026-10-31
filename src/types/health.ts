@@ -1,3 +1,5 @@
+import { DialogueStateAnalysis } from '../services/dialogueEngine';
+
 export type TriageLevel = 'NORMAL' | 'MONITOR' | 'SOON' | 'EMERGENCY';
 
 export type MedicationSlot = 'Sáng' | 'Trưa' | 'Chiều' | 'Tối';
@@ -40,6 +42,8 @@ export interface PatientProfile {
   vitalLogs: VitalLog[];
 }
 
+export type InferenceEngineMode = 'cloud_hybrid' | 'qwen_local';
+
 export interface TriageResponseData {
   triageLevel: TriageLevel;
   triageTitle: string;
@@ -50,6 +54,9 @@ export interface TriageResponseData {
   redFlags: string[];
   personalizedNotes: string;
   followUpQuestions: string[];
+  dialogueState?: DialogueStateAnalysis;
+  activeEngine?: string;
+  fallbackNotice?: string;
 }
 
 export interface ChatMessage {
@@ -124,4 +131,10 @@ export interface DrugInteractionResult {
   }[];
 }
 
-export type ActiveWorkspaceTab = 'chat' | 'scanner' | 'interactions' | 'profile';
+export type ActiveWorkspaceTab =
+  | 'chat'
+  | 'meddies_research'
+  | 'scanner'
+  | 'interactions'
+  | 'profile';
+

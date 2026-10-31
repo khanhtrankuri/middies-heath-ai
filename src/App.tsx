@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Stethoscope,
+  Database,
   FileSearch,
   Pill,
   UserCheck,
@@ -13,6 +14,7 @@ import {
   ChatMessage,
   ChatSession,
   DocumentAnalysisResult,
+  InferenceEngineMode,
   MedicationSlot,
   PatientProfile,
   TriageLevel,
@@ -24,6 +26,7 @@ import {
   getTodayDateString,
 } from './data/defaultHealthData';
 import { SymptomChatView } from './components/SymptomChatView';
+import { MeddiesResearchView } from './components/MeddiesResearchView';
 import { DocumentScannerView } from './components/DocumentScannerView';
 import { DrugInteractionView } from './components/DrugInteractionView';
 import { HealthProfileView } from './components/HealthProfileView';
@@ -31,12 +34,18 @@ import { EmergencyGuideModal } from './components/EmergencyGuideModal';
 
 const STORAGE_KEYS = {
   PROFILE: 'middies_health_profile_v1',
-  SESSIONS: 'middies_chat_sessions_v1',
+  SESSIONS: 'middies_chat_sessions_v2',
   DOCUMENTS: 'middies_doc_history_v1',
 };
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveWorkspaceTab>('chat');
+  const [inferenceMode, setInferenceMode] =
+    useState<InferenceEngineMode>('cloud_hybrid');
+  const [pendingSamplePrompt, setPendingSamplePrompt] = useState<{
+    prompt: string;
+    title: string;
+  } | null>(null);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -83,7 +92,10 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(patientProfile));
+      localStorage.setItem(
+        STORAGE_KEYS.PROFILE,
+        JSON.stringify(patientProfile)
+      );
     } catch {
       // Ignore quota errors
     }
@@ -124,6 +136,22 @@ export function App() {
     setChatSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newId);
     setActiveTab('chat');
+  };
+
+  const handleRunSampleInChat = (initialPrompt: string, sampleTitle: string) => {
+    const newId = `session-${Date.now()}`;
+    const newSession: ChatSession = {
+      id: newId,
+      title: sampleTitle.slice(0, 48),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [],
+    };
+    setChatSessions((prev) => [newSession, ...prev]);
+    setActiveSessionId(newId);
+    setPendingSamplePrompt({ prompt: initialPrompt, title: sampleTitle });
+    setActiveTab('chat');
+    showToast(`Đang chạy thử kịch bản "${sampleTitle}" từ tập dữ liệu Meddies/meddies-consultant...`);
   };
 
   const handleDeleteSession = (id: string) => {
@@ -249,11 +277,11 @@ export function App() {
           }}
           className="font-display text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
         >
-          Middies Health AI
+          Ứng Dụng AI Cho Bài Toán Y Tế · Meddies AI
         </a>
 
-        {/* Zone 2: 4 concise single-line navigation links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+        {/* Zone 2: Concise single-line navigation links */}
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
           <a
             href="#chat"
             onClick={(e) => {
@@ -266,7 +294,21 @@ export function App() {
                 : ''
             }`}
           >
-            Tư Vấn Triệu Chứng
+            Tư Vấn & Dự Đoán Bệnh
+          </a>
+          <a
+            href="#meddies_research"
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab('meddies_research');
+            }}
+            className={`transition-colors whitespace-nowrap shrink-0 hover:text-slate-900 ${
+              activeTab === 'meddies_research'
+                ? 'text-teal-700 font-semibold underline underline-offset-8'
+                : ''
+            }`}
+          >
+            Mô Hình & Dataset Meddies
           </a>
           <a
             href="#scanner"
@@ -308,7 +350,7 @@ export function App() {
                 : ''
             }`}
           >
-            Hồ Sơ & Lịch Thuốc
+            Hồ Sơ Sức Khỏe
           </a>
         </nav>
 
@@ -326,32 +368,56 @@ export function App() {
 
       {/* Main Clinical Workspace Container */}
       <div className="flex-1 mx-auto w-full max-w-[1440px] px-4 sm:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        {/* Left Workspace Sidebar (260px on desktop) */}
+        {/* Left Workspace Sidebar */}
         <aside className="xl:col-span-3 space-y-5">
+          {/* Thesis Overview Summary Card */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+            <span className="text-[11px] font-bold text-teal-700 block">
+              ĐỀ TÀI NGHIÊN CỨU & SẢN PHẨM
+            </span>
+            <h1 className="text-sm font-bold text-slate-900">
+              Ứng dụng AI cho bài toán Y Tế
+            </h1>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Hội thoại thu thập triệu chứng đa lượt, phân tích và dự đoán các
+              bệnh có khả năng liên quan dựa trên dữ liệu{' '}
+              <span className="font-mono-tabular font-semibold text-slate-800">
+                Meddies/meddies-consultant
+              </span>
+              , cung cấp thông tin tham khảo và khuyến nghị cơ sở y tế.
+            </p>
+          </div>
+
           {/* Workspace Module Selector */}
           <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
             {[
               {
                 id: 'chat' as ActiveWorkspaceTab,
-                label: 'Trợ Lý Tư Vấn & Phân Loại',
-                sub: 'Hỏi đáp & Sàng lọc mức khẩn cấp',
+                label: '01. Tư Vấn & Dự Đoán Bệnh Liên Quan',
+                sub: 'Hỏi bổ sung đa lượt & Khuyến nghị y tế',
                 icon: Stethoscope,
               },
               {
+                id: 'meddies_research' as ActiveWorkspaceTab,
+                label: '02. Mô Hình & Dataset Meddies',
+                sub: 'Trình diễn dữ liệu & Thực nghiệm QLoRA',
+                icon: Database,
+              },
+              {
                 id: 'scanner' as ActiveWorkspaceTab,
-                label: 'Đọc Đơn Thuốc & Xét Nghiệm',
+                label: '03. Đọc Đơn Thuốc & Xét Nghiệm',
                 sub: 'Bóc tách chỉ số qua ảnh OCR',
                 icon: FileSearch,
               },
               {
                 id: 'interactions' as ActiveWorkspaceTab,
-                label: 'Tra Cứu & Tương Tác Thuốc',
-                sub: 'Kiểm tra xung đột đa hoạt chất',
+                label: '04. Tra Cứu & Tương Tác Thuốc',
+                sub: 'Tìm nhanh tên thuốc & Kiểm tra xung đột',
                 icon: Pill,
               },
               {
                 id: 'profile' as ActiveWorkspaceTab,
-                label: 'Hồ Sơ & Lịch Nhắc Thuốc',
+                label: '05. Hồ Sơ & Lịch Nhắc Thuốc',
                 sub: `Hôm nay: ${takenDosesToday}/${totalDosesToday} liều đã uống`,
                 icon: UserCheck,
               },
@@ -394,7 +460,7 @@ export function App() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div>
                 <span className="text-xs text-slate-500 block">
-                  BỆNH NHÂN ĐANG THEO DÕI
+                  NGỮ CẢNH HỒ SƠ NGƯỜI DÙNG
                 </span>
                 <h2 className="text-sm font-bold text-slate-900">
                   {patientProfile.fullName}
@@ -420,24 +486,6 @@ export function App() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-800">
-                  Lịch uống thuốc hôm nay
-                </span>
-                <span className="font-mono-tabular font-bold text-teal-700">
-                  {takenDosesToday}/{totalDosesToday} cử
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab('profile')}
-                className="w-full rounded-md border border-slate-300 bg-white py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors"
-              >
-                Mở Bảng Đánh Dấu Uống Thuốc
-              </button>
-            </div>
-
             <button
               type="button"
               onClick={() => setIsEmergencyOpen(true)}
@@ -461,6 +509,33 @@ export function App() {
               onUpdateSessionMessages={handleUpdateSessionMessages}
               patientProfile={patientProfile}
               onOpenEmergencyModal={() => setIsEmergencyOpen(true)}
+              inferenceMode={inferenceMode}
+              onChangeInferenceMode={(mode) => {
+                setInferenceMode(mode);
+                showToast(
+                  mode === 'cloud_hybrid'
+                    ? 'Đã chuyển sang Chế độ 1: Suy luận trực tuyến kèm RAG Meddies/meddies-consultant.'
+                    : 'Đã chuyển sang Chế độ 2: Kết nối FastAPI Qwen Fine-Tuned (:8000) kèm dự phòng tự động.'
+                );
+              }}
+              onOpenMeddiesResearchTab={() => setActiveTab('meddies_research')}
+              pendingSamplePrompt={pendingSamplePrompt}
+              onClearPendingSamplePrompt={() => setPendingSamplePrompt(null)}
+            />
+          )}
+
+          {activeTab === 'meddies_research' && (
+            <MeddiesResearchView
+              inferenceMode={inferenceMode}
+              onChangeInferenceMode={(mode) => {
+                setInferenceMode(mode);
+                showToast(
+                  mode === 'cloud_hybrid'
+                    ? 'Đã chuyển sang Chế độ 1: Suy luận trực tuyến kèm RAG Meddies/meddies-consultant.'
+                    : 'Đã chuyển sang Chế độ 2: Kết nối FastAPI Qwen Fine-Tuned (:8000) kèm dự phòng tự động.'
+                );
+              }}
+              onRunSampleInChat={handleRunSampleInChat}
             />
           )}
 
@@ -510,12 +585,12 @@ export function App() {
       <footer className="border-t border-slate-200 bg-white px-6 py-4 mt-8">
         <div className="mx-auto max-w-[1440px] flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
           <p>
-            Middies Health AI · Hệ thống trợ lý thông tin y khoa & quản lý sức khỏe cá nhân lưu trữ cục bộ bảo mật.
+            Đề tài: Ứng dụng AI cho bài toán Y Tế · Dữ liệu hội thoại y tế tiếng Việt Meddies/meddies-consultant (revision 05428709a).
           </p>
           <p className="flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
             <span>
-              Mọi nội dung tư vấn mang tính chất tham khảo y tế, không thay thế việc thăm khám và kê đơn trực tiếp của bác sĩ.
+              Hệ thống hướng tới vai trò hỗ trợ sàng lọc và cung cấp thông tin ban đầu, không thay thế chẩn đoán của bác sĩ.
             </span>
           </p>
         </div>

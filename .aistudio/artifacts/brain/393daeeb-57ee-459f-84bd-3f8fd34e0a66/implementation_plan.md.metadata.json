@@ -1,6 +1,6 @@
 {
-  "summary":  "Kế hoạch đánh giá hiện trạng và kiến trúc xây dựng hệ thống trợ lý y tế thông minh Middies Health AI dành cho bệnh nhân và người dùng cá nhân, tích hợp phân tích triệu chứng khẩn cấp, đọc đơn thuốc/xét nghiệm qua ảnh, tra cứu tương tác thuốc và quản lý hồ sơ sức khỏe lưu trữ cục bộ bảo mật.",
-  "updatedAt":  "2026-10-22T03:33:14.138560897Z",
+  "summary":  "Kế hoạch tái cấu trúc và triển khai hệ thống \"Ứng dụng AI cho bài toán Y Tế\" bám sát 100% bản đăng ký đề tài nghiên cứu trên bộ dữ liệu hội thoại y tế tiếng Việt Meddies/meddies-consultant, tích hợp Backend suy luận chế độ kép (Cloud Hybrid Meddies RAG + Qwen LoRA FastAPI) và phân hệ Trình diễn Mô hình & Dataset phục vụ bảo vệ đề tài.",
+  "updatedAt":  "2026-10-31T10:46:59.251910173Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
