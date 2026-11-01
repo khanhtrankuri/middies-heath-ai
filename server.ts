@@ -74,26 +74,36 @@ THÔNG TIN HỒ SƠ SỨC KHỎE BỆNH NHÂN:
 `.trim();
 }
 
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = 6000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function checkQwenLocalBackendReady(): Promise<{
   online: boolean;
   modelReady: boolean;
   ragReady: boolean;
   url: string;
 }> {
+  const unavailable = {
+    online: false,
+    modelReady: false,
+    ragReady: false,
+    url: QWEN_BACKEND_URL,
+  };
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2000);
-    const resp = await fetch(`${QWEN_BACKEND_URL}/ready`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+    const resp = await fetchWithTimeout(`${QWEN_BACKEND_URL}/ready`, {}, 2000);
     if (!resp.ok) {
-      return {
-        online: false,
-        modelReady: false,
-        ragReady: false,
-        url: QWEN_BACKEND_URL,
-      };
+      return unavailable;
     }
     const data: any = await resp.json();
     return {
@@ -103,12 +113,7 @@ async function checkQwenLocalBackendReady(): Promise<{
       url: QWEN_BACKEND_URL,
     };
   } catch {
-    return {
-      online: false,
-      modelReady: false,
-      ragReady: false,
-      url: QWEN_BACKEND_URL,
-    };
+    return unavailable;
   }
 }
 
@@ -192,13 +197,9 @@ async function startServer() {
         return;
       }
 
-      let fallbackNotice: string | undefined;
-
       // Chế độ 2: Nếu người dùng chọn kết nối trực tiếp tới FastAPI Backend của mô hình Qwen Fine-Tuned (qwen-rag-stack)
       if (inferenceMode === 'qwen_local' && !imageBase64) {
         try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 6000);
           const conversationPayload = [
             ...history.slice(-12).map((m: any) => ({
               role: m.role === 'user' ? 'user' : 'assistant',
@@ -206,16 +207,14 @@ async function startServer() {
             })),
             { role: 'user', content: message },
           ];
-          const qwenResp = await fetch(
+          const qwenResp = await fetchWithTimeout(
             `${QWEN_BACKEND_URL}/api/v1/consultation`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ messages: conversationPayload }),
-              signal: controller.signal,
             }
           );
-          clearTimeout(timer);
 
           if (qwenResp.ok) {
             const qwenData: any = await qwenResp.json();
@@ -459,9 +458,6 @@ ${message || 'Hãy phân tích hình ảnh triệu chứng đính kèm này và 
       parsed.dialogueState = dialogueState;
       parsed.activeEngine =
         'Cloud Hybrid AI + Meddies/meddies-consultant RAG + 7-Stage DST';
-      if (fallbackNotice) {
-        parsed.fallbackNotice = fallbackNotice;
-      }
 
       res.json(parsed);
     } catch (error: any) {

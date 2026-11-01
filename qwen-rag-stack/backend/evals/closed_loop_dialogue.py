@@ -17,7 +17,7 @@ from evals.benchmark_dialogue import GuidedGenerator, HFGenerator, PlannerGenera
 
 def simulate(case, generator, *, max_turns=6):
     history = [{"role": "user", "content": case["opening"]}]
-    asked, repeats, unrelated, accepted = [], 0, 0, 0
+    asked, repeats, unrelated = [], 0, 0
     emergency = False
     for _ in range(max_turns + 1):
         state = extract_dialogue_state(history, max_questions=max_turns)
@@ -40,7 +40,6 @@ def simulate(case, generator, *, max_turns=6):
         # An off-target question receives no invented answer.
         answer = case.get("answers", {}).get(slot, "Tôi không biết")
         history.extend([{"role": "assistant", "content": reply}, {"role": "user", "content": answer}])
-        accepted += on_target
     state = extract_dialogue_state(history, max_questions=max_turns)
     assessment = generate_hypotheses(state)
     expected_emergency = bool(case.get("emergency", False))

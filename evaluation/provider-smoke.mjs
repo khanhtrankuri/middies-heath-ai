@@ -6,6 +6,13 @@ const post = (body) => fetch("http://127.0.0.1:5300/api/health/chat", {
   method: "POST", headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body), signal: AbortSignal.timeout(15000),
 });
+const readiness = await fetch("http://127.0.0.1:5300/api/meddies/status", {
+  signal: AbortSignal.timeout(15000),
+});
+assert.equal(readiness.status, 200);
+const status = await readiness.json();
+assert.equal(status.qwenLocal.online, false);
+assert.equal(status.qwenLocal.modelReady, false);
 const unavailable = await post({ message: "Tôi bị đau bụng từ hôm qua", inferenceMode: "qwen_local" });
 assert.equal(unavailable.status, 503);
 assert.equal((await unavailable.json()).provider, "qwen-unavailable");

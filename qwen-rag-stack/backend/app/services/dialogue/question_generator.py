@@ -4,19 +4,27 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from typing import Literal, TypedDict
 
 from .lexicon import fold_aligned, question_topics
+from .planner import NextQuestion
 from .prompts import CONDITION_NOUN, planner_messages, validate_generated_question
+from .state import DialogueState
+
+
+class ModelValidation(TypedDict):
+    accepted: bool
+    rejection_reasons: list[str]
 
 
 @dataclass
 class QuestionResult:
     text: str
-    source: str
-    validation: dict
+    source: Literal["model", "template"]
+    validation: ModelValidation
 
 
-def validate_question(text: str, decision, state) -> list[str]:
+def validate_question(text: str, decision: NextQuestion, state: DialogueState) -> list[str]:
     problems = validate_generated_question(text, decision.slot or "")
     topic = question_topics(text)
     topics = topic.slots
@@ -47,7 +55,7 @@ def validate_question(text: str, decision, state) -> list[str]:
     return list(dict.fromkeys(problems))
 
 
-def resolve_question(raw: str, decision, state) -> QuestionResult:
+def resolve_question(raw: str, decision: NextQuestion, state: DialogueState) -> QuestionResult:
     problems = []
     text = ""
     try:
@@ -60,13 +68,20 @@ def resolve_question(raw: str, decision, state) -> QuestionResult:
     if not problems:
         problems.extend(validate_question(text, decision, state))
     return QuestionResult(
-        text=decision.text or "" if problems else text,
+        text=(decision.text or "") if problems else text,
         source="template" if problems else "model",
         validation={"accepted": not problems, "rejection_reasons": problems},
     )
 
 
-async def generate_question(inference, history, state, decision, *, allow_degraded: bool = False) -> QuestionResult:
+async def generate_question(
+    inference,
+    history: list[dict[str, str]],
+    state: DialogueState,
+    decision: NextQuestion,
+    *,
+    allow_degraded: bool = False,
+) -> QuestionResult:
     if not decision.should_ask or not decision.text:
         raise ValueError("Cannot generate a question for a stop decision")
     try:

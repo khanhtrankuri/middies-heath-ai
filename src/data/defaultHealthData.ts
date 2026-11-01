@@ -190,7 +190,6 @@ export const INITIAL_CHAT_SESSIONS: ChatSession[] = [
               {
                 name: 'Trào ngược dạ dày - thực quản (GERD) & Viêm niêm mạc dạ dày cấp',
                 icd10: 'K21.0 / K29.1',
-                matchScore: 91,
                 supportingEvidence: [
                   'Triệu chứng ghi nhận: Đau vùng thượng vị / dạ dày, Ợ chua / Ợ nóng trào ngược',
                   'Vị trí triệu chứng: vùng thượng vị',
@@ -211,7 +210,6 @@ export const INITIAL_CHAT_SESSIONS: ChatSession[] = [
               {
                 name: 'Khó tiêu chức năng (Functional Dyspepsia) / Theo dõi loét tá tràng',
                 icd10: 'K30 / K27',
-                matchScore: 76,
                 supportingEvidence: [
                   'Đau âm ỉ thượng vị tăng khi bụng đói và căng thẳng công việc',
                 ],

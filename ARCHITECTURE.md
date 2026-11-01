@@ -1,78 +1,58 @@
-# Kiến Trúc Middies Health AI (Sau Khi Hợp Nhất Toàn Bộ Các Nhánh)
+# Kiến trúc Middies Health AI
 
-## 1. Tổng Quan Hợp Nhất Các Nhánh (Branch Unification Summary)
+Mã nguồn được duy trì trên `main`, với hai runtime trong cùng repository. Backend nghiên cứu chính
+nằm tại `qwen-rag-stack/backend/`; ứng dụng Express/React ở gốc vẫn được giữ để bảo toàn các chức năng hiện có.
 
-Toàn bộ lịch sử phát triển và tính năng từ **6 nhánh** trong kho mã nguồn (`khanhtrankuri/middies-heath-ai`) đã được đọc rà soát, hợp nhất về nhánh `main` và đồng bộ kiến trúc:
+## Thành phần
 
-| Nhánh Nguồn (Source Branch) | Thành Phần Đóng Góp Chính | Vị Trí Sau Hợp Nhất & Tích Hợp |
+| Thành phần | Vị trí | Trách nhiệm |
 |---|---|---|
-| `main` & `research/open-teacher-qwen` | Ứng dụng Full-stack React 19 + Vite + Express + Gemini (`gemini-3.8-flash`), danh mục thuốc (`medicationCatalog.ts`), đọc đơn thuốc/xét nghiệm OCR, kiểm tra tương tác thuốc, quản lý hồ sơ sức khỏe cục bộ | `/` (`server.ts`, `src/*`) |
-| `feat/medical-dialogue-research` | Quy trình hội thoại y khoa 7 bước: Bộ định tuyến cấp cứu xác định (`triage.py`), Ràng buộc phạm vi y tế & chống Prompt Injection (`guardrails.py`), Theo dõi trạng thái hội thoại (`DialogueState` - `state.py`), Bộ lập kế hoạch câu hỏi (`Question Planner` - `planner.py`), Giả thuyết bệnh có dẫn chứng (`hypotheses.py`), Làm sạch dữ liệu `Meddies/meddies-consultant` chống rò rỉ (`prepare_dialogue.py`) và kết quả thực nghiệm LoRA E1/E2/E3 (`docs/EXPERIMENT_RESULTS.md`) | Đã giữ nguyên trọn vẹn tại `/qwen-rag-stack/` **VÀ** tích hợp trực tiếp mô-đun DST + Question Planner + Guardrails + Hypotheses vào ứng dụng gốc tại `/src/services/dialogueEngine.ts` & `/src/components/SymptomChatView.tsx` |
-| `eval/meddies-consultant` | Pipeline đánh giá tự động endpoint `/api/health/chat` trên bộ dữ liệu `Meddies/meddies-consultant` (`meddies_eval.py` + unit tests) | `/evaluation/` |
-| `claude/youthful-meitner-0kodvk` & `feat/initial-project` | Hệ thống Qwen3 (0.6B/1.7B) + Hybrid RAG (BM25 + BGE-M3 + RRF + Reranker) + FastAPI + Next.js/Vinext | `/qwen-rag-stack/` |
+| Ứng dụng React/Vite | `src/`, `server.ts` | Chat, quản lý hồ sơ, đọc tài liệu và trợ lý tương tác thuốc |
+| Giao diện nghiên cứu | `qwen-rag-stack/app/` | Hiển thị trạng thái hỏi bệnh, nguồn phản hồi, bằng chứng và giới hạn |
+| FastAPI | `qwen-rag-stack/backend/app/` | Safety, scope, DST, Planner, Qwen và RAG |
+| Huấn luyện | `qwen-rag-stack/backend/training/` | Chuẩn bị dữ liệu có provenance, LoRA và kiểm tra adapter |
+| Đánh giá | `evaluation/`, `qwen-rag-stack/backend/evals/` | Kiểm thử ứng dụng gốc, benchmark và closed-loop |
+| Báo cáo | `qwen-rag-stack/docs/` | Protocol, cấu hình và kết quả thí nghiệm có bằng chứng |
 
----
+## Chọn provider
 
-## 2. Luồng Kiến Trúc Thống Nhất Tại Ứng Dụng Chính (`/server.ts` & `/src/*`)
+Ứng dụng gốc gọi Gemini khi người dùng chọn chế độ cloud. Với chat `qwen_local`, Express chuyển
+lịch sử sang `POST /api/v1/consultation` của FastAPI. Nếu Qwen không sẵn sàng, route này trả 503.
+Chế độ benchmark chặn việc chuyển sang provider khác. OCR và tương tác thuốc vẫn thuộc luồng Gemini.
 
-```text
-Người dùng gửi câu hỏi / triệu chứng / hình ảnh y tế
-        │
-        ▼
-[Bước 1] Deterministic Safety Router (src/services/dialogueEngine.ts)
-        │  • Quét dấu hiệu Cờ đỏ Cấp cứu (Đột quỵ F.A.S.T, đau ngực/khó thở cấp,
-        │    nôn ra máu/phân đen, co giật/lơ mơ, phản vệ, tự hại) có xét phủ định
-        ▼
-[Bước 2] Deterministic Medical Scope & Anti-Injection Guardrail
-        │  • Chặn câu hỏi ngoài lĩnh vực y tế (code, toán, bóng đá, chứng khoán...)
-        │    và chặn Prompt Injection trước khi gọi LLM -> trả về OUT_OF_SCOPE
-        ▼
-[Bước 3] Dialogue State Tracking (DST) & Missing-Slot Analysis
-        │  • Bóc tách triệu chứng dương tính, triệu chứng âm tính đã loại trừ,
-        │    thời gian khởi phát, vị trí, mức độ/nhiệt độ, tính chất, yếu tố khởi phát
-        ▼
-[Bước 4] Question Planner & Candidate Hypotheses Engine
-        │  • Chọn câu hỏi ưu tiên tiếp theo cho trường thông tin cốt lõi còn thiếu
-        │  • Tạo danh sách khả năng liên quan (kèm mã ICD-10, bằng chứng ủng hộ & còn thiếu)
-        ▼
-[Bước 5] Local Clinical RAG + Patient Profile Context Injection
-        │  • Kết hợp phác đồ Bộ Y tế / ICD-10 (clinicalReferenceDataset.ts),
-        │    Dược thư (medicationCatalog.ts) và Hồ sơ Dị ứng/Bệnh nền của người dùng
-        ▼
-[Bước 6] Suy luận Đa phương thức (Gemini 3.8 Flash Structured JSON)
-        │
-        ▼
-[Bước 7] Giao diện React Hiển thị Trực quan (SymptomChatView.tsx)
-        • Hộp phân tầng khẩn cấp (Triage) + Khung Trạng Thái Khai Thác Bệnh Sử (DST)
-        • Ẩn toàn bộ khung nguyên nhân/nguồn y khoa khi câu hỏi thuộc nhóm OUT_OF_SCOPE
+Hai giao diện có các dependency và lệnh chạy riêng. Giao diện nghiên cứu gọi FastAPI trực tiếp;
+việc hợp nhất Git không biến hai runtime thành một backend duy nhất.
+
+## Luồng nghiên cứu
+
+```mermaid
+flowchart TD
+    U[User message] --> S[Independent safety router]
+    S -->|Emergency| E[Deterministic emergency reply]
+    S --> G[Medical scope guard]
+    G --> D[Dialogue state tracking]
+    D --> P[Choose one missing slot]
+    P -->|Ask more| Q[Qwen Base or LoRA]
+    Q --> V[JSON and question validator]
+    V -->|Accepted| A[Model question]
+    V -->|Rejected| T[Disclosed Planner template]
+    P -->|Stop| H[Assessment or insufficient evidence]
+    H --> R[Source-checked RAG or degraded grounding]
 ```
 
----
+Safety chạy độc lập với model/RAG. Dữ liệu đầu vào được phân định vai trò; validator kiểm tra định dạng,
+target slot, nội dung lặp và các lỗi an toàn đã định nghĩa. API công khai provider, adapter và lý do fallback.
+Các kiểm tra này là biện pháp của nguyên mẫu nghiên cứu, chưa phải chứng nhận an toàn lâm sàng.
 
-## 3. Cấu Trúc Thư Mục Toàn Dự Án
+## Tri thức và kết quả
 
-```text
-.
-├── server.ts                              # Máy chủ Express tích hợp 7-Stage DST Engine + Gemini API
-├── src/
-│   ├── App.tsx                            # Giao diện chính 4 phân khu y tế + Thẻ Cấp Cứu 115
-│   ├── services/
-│   │   └── dialogueEngine.ts              # Động cơ DST, Question Planner, Safety Router & Hypotheses
-│   ├── data/
-│   │   ├── clinicalReferenceDataset.ts    # Bộ dữ liệu phác đồ lâm sàng ICD-10 / Bộ Y tế & chuẩn xét nghiệm
-│   │   ├── medicationCatalog.ts           # Danh mục dược điển & tìm kiếm thuốc nhanh (Autocomplete)
-│   │   └── defaultHealthData.ts           # Hồ sơ mẫu & dữ liệu kiểm thử lâm sàng
-│   └── components/
-│       ├── SymptomChatView.tsx            # Tư vấn triệu chứng + Hiển thị DST, Missing Info & Hypotheses
-│       ├── DocumentScannerView.tsx        # Đọc đơn thuốc & phiếu xét nghiệm qua ảnh (OCR)
-│       ├── DrugInteractionView.tsx        # Kiểm tra tương tác đa hoạt chất & gợi ý thuốc nhanh
-│       ├── HealthProfileView.tsx          # Quản lý hồ sơ sức khỏe, BMI, sinh hiệu & lịch nhắc thuốc
-│       └── EmergencyGuideModal.tsx        # Cẩm nang sơ cứu cấp cứu 115 & Thẻ Y tế cá nhân
-├── evaluation/                            # Pipeline đánh giá chuẩn trên tập Meddies/meddies-consultant
-├── qwen-rag-stack/                        # Toàn bộ mã nguồn Qwen3 LoRA + FastAPI + Hybrid RAG + Tài liệu nghiên cứu
-│   ├── backend/app/services/dialogue/     # Bản Python gốc của DST, Planner, Lexicon, Hypotheses, Guardrails
-│   ├── backend/training/                  # Pipeline làm sạch dữ liệu & huấn luyện LoRA Qwen3 (E1/E2/E3)
-│   ├── backend/evals/                     # Bộ đo DST, Question Rubric, Safety Cases & Error Analysis
-│   └── docs/                              # ARCHITECTURE.md, AUDIT.md, DATASET.md, TRAINING.md, EXPERIMENT_RESULTS.md
-└── ARCHITECTURE.md                        # Tài liệu kiến trúc hợp nhất
-```
+Danh mục thuốc, mẫu Meddies và các quy tắc được lập trình trong `src/data/` hoặc `dialogue/knowledge.py`
+không mặc nhiên là phác đồ đã được chuyên gia thẩm định. Tài liệu RAG giữ URL, phiên bản và trạng thái
+kiểm tra nguồn; kiểm tra xuất xứ khác với rà soát lâm sàng. Không hiển thị phần trăm xác suất bệnh chưa hiệu chuẩn.
+
+Model, dữ liệu xử lý, index, log và kết quả chạy cục bộ được Git ignore. Báo cáo E1–E5 đã công bố được
+giữ nguyên; dọn code không ghi đè kết quả hoặc huấn luyện lại để thay đổi kết luận.
+
+Chi tiết: [hướng dẫn nghiên cứu](qwen-rag-stack/docs/PLANNER_GUIDED.md),
+[kết quả E5](qwen-rag-stack/docs/PLANNER_E5_RESULTS_20261031.md),
+[hợp nhất và bảo trì repository](docs/REPOSITORY_MAINTENANCE.md).

@@ -14,7 +14,6 @@ export interface DialogueSlotValue {
 export interface CandidateHypothesis {
   name: string;
   icd10: string;
-  matchScore: number;
   supportingEvidence: string[];
   missingEvidence: string[];
   explanation: string;
@@ -46,85 +45,6 @@ export interface DialogueStateAnalysis {
   candidateHypotheses: CandidateHypothesis[];
   matchedMeddiesSamples: MeddiesDatasetSample[];
 }
-
-const EMERGENCY_PATTERNS: { key: string; label: string; patterns: string[] }[] = [
-  {
-    key: 'stroke_fast',
-    label: 'Dấu hiệu nghi ngờ Đột quỵ cấp (Méo miệng / Nói ngọng / Yếu liệt nửa người)',
-    patterns: [
-      'meo mieng',
-      'lech mat',
-      'noi ngong',
-      'noi kho',
-      'yeu tay',
-      'yeu chan',
-      'liet nua nguoi',
-      'te nua nguoi',
-    ],
-  },
-  {
-    key: 'chest_pain_dyspnea',
-    label: 'Đau thắt ngực cấp / Khó thở cấp tính',
-    patterns: [
-      'dau nguc trai',
-      'dau that nguc',
-      'ep nguc',
-      'bop nghet nguc',
-      'kho tho qua',
-      'kho tho cap',
-      'tho rit',
-      'tim tai',
-      'moi tim',
-    ],
-  },
-  {
-    key: 'gi_bleeding',
-    label: 'Dấu hiệu Xuất huyết tiêu hóa (Nôn ra máu / Đi ngoài phân đen)',
-    patterns: [
-      'non ra mau',
-      'oi ra mau',
-      'phan den',
-      'di ngoai ra mau tuoi',
-      'ho ra mau',
-    ],
-  },
-  {
-    key: 'neuro_seizure_syncope',
-    label: 'Co giật / Ngất xỉu / Rối loạn ý thức (Lơ mơ)',
-    patterns: [
-      'co giat',
-      'ngat xiu',
-      'bat tinh',
-      'lo mo',
-      'hon me',
-      'cung gay',
-      'cung co kem sot',
-    ],
-  },
-  {
-    key: 'anaphylaxis',
-    label: 'Dấu hiệu nghi ngờ Phản vệ nặng (Sưng phù môi mắt / Nghẹn họng / Tụt huyết áp)',
-    patterns: [
-      'soc phan ve',
-      'sung moi',
-      'sung luoi',
-      'phu ne hong',
-      'nghen co hong',
-      'tut huyet ap',
-    ],
-  },
-  {
-    key: 'self_harm',
-    label: 'Khủng hoảng tâm lý khẩn cấp / Ý định tự hại',
-    patterns: [
-      'muon tu tu',
-      'y dinh tu hai',
-      'khong muon song',
-      'ket thuc cuoc doi',
-      'uong thuoc tu tu',
-    ],
-  },
-];
 
 const OUT_OF_SCOPE_PATTERNS: { reason: string; patterns: string[] }[] = [
   {
@@ -734,13 +654,11 @@ export function analyzeClinicalDialogueState(
   const candidateHypotheses: CandidateHypothesis[] = [];
   const symptomKeys = new Set(detectedSymptoms.map((s) => s.key));
   const evidenceStrings = collectedSlots.map((c) => `${c.label}: ${c.value}`);
-  const slotCompletenessBonus = Math.min(20, collectedSlots.length * 5);
 
   if (symptomKeys.has('dau_thuong_vi') || symptomKeys.has('o_chua') || symptomKeys.has('dau_bung')) {
     candidateHypotheses.push({
       name: 'Trào ngược dạ dày - thực quản (GERD) & Viêm niêm mạc dạ dày cấp',
       icd10: 'K21.0 / K29.1',
-      matchScore: Math.min(92, 68 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -760,7 +678,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Khó tiêu chức năng (Functional Dyspepsia) / Viêm loét dạ dày - tá tràng',
       icd10: 'K30 / K27',
-      matchScore: Math.min(78, 54 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -782,7 +699,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Sốt xuất huyết Dengue (Cần xét nghiệm máu loại trừ sớm)',
       icd10: 'A97',
-      matchScore: Math.min(94, 72 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -803,7 +719,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Viêm họng cấp / Nhiễm siêu vi đường hô hấp trên',
       icd10: 'J02.9 / J06.9',
-      matchScore: Math.min(89, 65 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -823,7 +738,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Viêm amidan cấp / Viêm phế quản cấp (Cần theo dõi bội nhiễm)',
       icd10: 'J03.9 / J20.9',
-      matchScore: Math.min(72, 50 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -853,7 +767,6 @@ export function analyzeClinicalDialogueState(
         ? 'Đau nửa đầu (Migraine) / Đau đầu vận mạch'
         : 'Đau đầu do căng thẳng (Tension-Type Headache)',
       icd10: isMigrainePattern ? 'G43.9' : 'G44.2',
-      matchScore: Math.min(90, 66 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -874,7 +787,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Theo dõi Tăng huyết áp / Hạ huyết áp tư thế',
       icd10: 'I10 / I95.1',
-      matchScore: Math.min(76, 54 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -895,7 +807,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Viêm bàng quang cấp (Nhiễm khuẩn đường tiết niệu dưới)',
       icd10: 'N30.0 / N39.0',
-      matchScore: Math.min(91, 68 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -917,7 +828,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Mày đay dị ứng cấp tính (Nghi do dị nguyên thực phẩm / thuốc)',
       icd10: 'L50.0',
-      matchScore: Math.min(92, 69 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -939,7 +849,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Căng cơ thắt lưng cấp / Hội chứng chèn ép rễ thần kinh',
       icd10: 'M54.5 / M51.1',
-      matchScore: Math.min(84, 62 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings
@@ -958,7 +867,6 @@ export function analyzeClinicalDialogueState(
     candidateHypotheses.push({
       name: 'Hội chứng triệu chứng nội khoa sớm (Cần thu thập thêm thông tin)',
       icd10: 'R69',
-      matchScore: Math.min(60, 40 + slotCompletenessBonus),
       supportingEvidence:
         evidenceStrings.length > 0
           ? evidenceStrings

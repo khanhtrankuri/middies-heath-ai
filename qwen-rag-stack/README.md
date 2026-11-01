@@ -4,6 +4,9 @@
 
 ## Mục đích và giới hạn
 
+Mã nguồn hiện được hợp nhất trên `main`; các tên nhánh ở phần giới thiệu là nguồn gốc lịch sử.
+Backend chuẩn duy nhất của hệ thống nghiên cứu là `backend/` trong thư mục `qwen-rag-stack/` này.
+
 Ứng dụng nghiên cứu hỗ trợ tư vấn sức khỏe ban đầu bằng tiếng Việt với mô hình Qwen chạy local, bộ phát hiện dấu hiệu nguy hiểm, hỏi thêm thông tin, truy xuất tài liệu và dẫn nguồn. Không dùng để tự chẩn đoán, thay bác sĩ, kê thuốc hay quyết định xử trí cấp cứu.
 
 ## Kiến trúc

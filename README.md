@@ -12,11 +12,15 @@ Middies Health AI is a research-stage Vietnamese medical information and symptom
 | Backend | Express, TypeScript (`server.ts`) | FastAPI, Python |
 | Model | Hosted `gemini-3.8-flash` via Google GenAI API | Qwen3 0.6B/1.7B, optional LoRA adapters |
 | Features | Symptom chat, document interpretation, drug interaction assistant, editable health profile | Multi-turn consultation, emergency rules, retrieval and citation-oriented generation |
-| Retrieval | No knowledge-base retrieval in current root implementation | Hybrid BM25 + dense retrieval, reranking and grounded-answer pipeline |
+| Retrieval | Static reference snippets and Meddies examples; not a clinically verified vector knowledge base | Hybrid BM25 + dense retrieval, reranking and grounded-answer pipeline |
 | Training | **No local fine-tuning** | Separate LoRA/QLoRA training tools; see dedicated documentation |
 | Application port | 3000 by default | API 8000; frontend configured separately |
 
 The two implementations are **not yet one integrated product**. Do not run commands or assume dependencies are interchangeable between their directories.
+
+The root chat can explicitly forward `qwen_local` requests to FastAPI; unavailable Qwen returns 503
+without switching providers. Research development uses `qwen-rag-stack/backend/` as the canonical backend.
+All active code is consolidated on `main`; see [repository maintenance](docs/REPOSITORY_MAINTENANCE.md).
 
 ## A. Start the Gemini API application (repository root)
 

@@ -4,7 +4,6 @@ Prepare planner data first. This runner never downloads a teacher, changes
 splits, substitutes providers or overwrites historical pilots.
 """
 import argparse
-from pathlib import Path
 
 from scripts.run_pilot_experiments import BACKEND, run
 
