@@ -1,4 +1,5 @@
 import { normalizeVietnamese } from '../data/medicationCatalog';
+import { localEmergencyKind } from '../../qwen-rag-stack/app/consultation.ts';
 import {
   MeddiesDatasetSample,
   retrieveSimilarMeddiesDialogues,
@@ -557,23 +558,15 @@ export function analyzeClinicalDialogueState(
 
   // Stage 1: Deterministic Safety Red-Flag Detection
   const matchedEmergencyFlags: string[] = [];
-  for (const group of EMERGENCY_PATTERNS) {
-    for (const pat of group.patterns) {
-      if (
-        normAllUser.includes(pat) &&
-        !normAllUser.includes(`khong ${pat}`) &&
-        !normAllUser.includes(`khong bi ${pat}`) &&
-        !normAllUser.includes(`khong co ${pat}`)
-      ) {
-        matchedEmergencyFlags.push(group.label);
-        break;
-      }
-    }
+  for (const text of [...history.filter((h) => h.role === 'user').map((h) => h.content), currentMessage]) {
+    const kind = localEmergencyKind(text);
+    const flag = kind === 'self_harm' ? 'Nguy cơ tự hại cần hỗ trợ ngay' : kind === 'medical' ? 'Dấu hiệu nguy hiểm do người dùng báo cáo' : null;
+    if (flag && !matchedEmergencyFlags.includes(flag)) matchedEmergencyFlags.push(flag);
   }
 
   // Stage 2: Deterministic Domain & Prompt-Injection Guardrail
   for (const rule of OUT_OF_SCOPE_PATTERNS) {
-    if (rule.patterns.some((p) => normCurrent.includes(p))) {
+    if (!matchedEmergencyFlags.length && rule.patterns.some((p) => normCurrent.includes(p))) {
       return {
         action: 'OUT_OF_SCOPE',
         stageNumber: 1,
@@ -1017,7 +1010,7 @@ export function analyzeClinicalDialogueState(
     negatedFindings,
     emergencyFlags: matchedEmergencyFlags,
     plannedQuestion,
-    candidateHypotheses,
+    candidateHypotheses: action === 'FINALIZE' ? candidateHypotheses : [],
     matchedMeddiesSamples,
   };
 }

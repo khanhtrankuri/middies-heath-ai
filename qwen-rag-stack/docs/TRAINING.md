@@ -111,3 +111,9 @@ MEDDIES_BASE_MODEL=Qwen/Qwen3-1.7B MEDDIES_MODEL_PATH=models/pilot_E3/final_adap
 
 `MEDDIES_MODEL_PATH` rỗng → chạy model gốc (baseline). Adapter thiếu file hoặc khác base model → lỗi rõ ràng,
 không âm thầm quay về baseline (`app/inference.py`).
+
+## E5C — Planner-Guided LoRA
+
+Cấu hình `training/configs/medical_planner_sft_v1.yaml` huấn luyện từ Qwen Base với assistant-only loss,
+chọn checkpoint theo validation, bảo vệ output cũ và kiểm tra provenance dữ liệu trước khi train.
+Lệnh smoke 32 mẫu, pilot và reload adapter: [PLANNER_GUIDED.md](PLANNER_GUIDED.md#lora-smoke-and-pilot).

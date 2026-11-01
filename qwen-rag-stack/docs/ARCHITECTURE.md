@@ -1,5 +1,9 @@
 # Kiến trúc — Qwen + RAG cho hỏi bệnh tiếng Việt
 
+**Cập nhật E5 (31/10/2026):** luồng Planner → JSON Qwen → validator và template fallback dùng chung
+prompt `consult-planner-vi-v2`; trạng thái model, nhãn và nguồn được công khai. Chi tiết API, suy giảm,
+an toàn độc lập, điều kiện dừng và xuất xứ tri thức: [PLANNER_GUIDED.md](PLANNER_GUIDED.md).
+
 > Phạm vi: hệ thống `qwen-rag-stack/` (nền tảng nghiên cứu chính của đề tài *Ứng dụng AI cho bài toán Y tế*).
 > Ứng dụng Gemini ở thư mục gốc là hệ thống riêng, không dùng chung backend/model.
 > Đây là phần mềm nghiên cứu, **không phải thiết bị y tế** và không thay thế chẩn đoán của bác sĩ.

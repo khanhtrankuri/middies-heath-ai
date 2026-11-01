@@ -25,6 +25,7 @@ function Sources({ result }: { result: ConsultationResponse }) {
       return <article className="source-card" key={source.citation_id}>
         <div className="source-title"><span>[{source.citation_id}]</span><strong>{source.title ?? "Tài liệu tham khảo"}</strong></div>
         {(source.organization || source.publication_date) && <small>{[source.organization, source.publication_date].filter(Boolean).join(" · ")}</small>}
+        <small>{source.review_status === "clinician_reviewed" ? "Đã có rà soát chuyên môn" : source.review_status === "source_checked" ? "Đã kiểm tra xuất xứ nguồn" : "Chưa thẩm định"}{source.source_version ? ` · ${source.source_version}` : ""}</small>
         <p>{source.snippet}</p>
         <div className="source-meta"><span>{[source.section && `Mục ${source.section}`, source.page && `Trang ${source.page}`].filter(Boolean).join(" · ")}</span>{url && <a href={url} target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a>}</div>
       </article>;
@@ -216,7 +217,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="notice" role="note"><span>ⓘ</span><p><strong>Lưu ý quan trọng:</strong> MedAI chỉ cung cấp thông tin tham khảo, không thay thế chẩn đoán hoặc điều trị của bác sĩ.</p></section>
+      <section className="notice" role="note"><span>ⓘ</span><p><strong>Nguyên mẫu nghiên cứu:</strong> Chưa được chứng nhận sử dụng lâm sàng. MedAI chỉ cung cấp thông tin tham khảo, không thay thế bác sĩ.</p></section>
 
       <div className="workspace" id="top">
         <aside className="left-panel">
@@ -232,7 +233,7 @@ export default function Home() {
         <section className="chat-panel" aria-label="Hội thoại tư vấn sức khỏe">
           <div className="chat-header"><div className="doctor-avatar">M</div><div><strong>Trợ lý sức khỏe MedAI</strong><span>Hỗ trợ thông tin và sàng lọc ban đầu</span></div></div>
           <div className="messages" aria-live="polite">
-            {result?.provider === "stub" && <div className="grounding-warning">Chế độ kiểm thử: đang dùng phản hồi mẫu, chưa sử dụng mô hình AI tư vấn thật.</div>}
+            {(result?.provider === "stub" || result?.model_identity?.provider === "StubProvider") && <div className="grounding-warning">Chế độ kiểm thử: đang dùng phản hồi mẫu, chưa sử dụng mô hình AI tư vấn thật.</div>}
             <div className="date-divider"><span>HÔM NAY</span></div>
             {messages.map((message) => <div key={message.id}><div className={`message-row ${message.role} ${message.failed ? "failed" : ""}`}>{message.role === "assistant" && <div className="mini-avatar">M</div>}<div className="message-bubble">{message.text}{message.failed && <small>Chưa gửi thành công</small>}{message.result?.action === "ASK_MORE" && message.result.next_question?.slot_label && <small className="question-reason">Vì sao hỏi: cần làm rõ {message.result.next_question.slot_label}.</small>}</div></div>{message.result && <AssessmentCard result={message.result} />}{message.result && <Sources result={message.result} />}</div>)}
             {loading && <div className="message-row assistant"><div className="mini-avatar">M</div><div className="message-bubble">Đang tổng hợp thông tin…</div></div>}
@@ -256,6 +257,7 @@ export default function Home() {
         <aside className="right-panel">
           <p className="eyebrow">THÔNG TIN ĐÃ THU THẬP</p><div className="summary-card">{facts.length ? facts.map((fact) => <div className="summary-item" key={fact.label}><span>{fact.label}</span><strong>{fact.value}</strong></div>) : <><div className="summary-item"><span>Mô tả ban đầu</span><strong>{summary.symptom}</strong></div><div className="summary-item"><span>Thời gian</span><strong>{summary.duration}</strong></div><div className="summary-item"><span>Mức độ triệu chứng</span><strong>{summary.severity}</strong></div></>}<div className="summary-item"><span>Dấu hiệu khẩn cấp</span><strong className={urgent ? "urgent-text" : ""}>{urgent ? "Cần xử trí ngay" : result ? "Chưa ghi nhận qua mô tả" : "Chưa được đánh giá"}</strong></div></div>
           {missing.length > 0 && <div className="missing-card"><h3>Thông tin còn thiếu</h3><ul>{missing.map((item) => <li key={item}>{item}</li>)}</ul></div>}
+          {result && <div className="missing-card"><h3>Trạng thái nghiên cứu</h3><p>{result.action} · {result.provider}</p><p>{result.question_source === "template" ? "Câu hỏi từ Planner Template" : result.model_identity?.adapter ? "Planner + Qwen Fine-tuned" : result.model_identity?.base_model && result.model_identity.loaded ? "Planner + Qwen Base" : result.model_identity?.provider === "StubProvider" ? "Demo: không dùng Qwen" : "Mô hình chưa được xác nhận"}</p>{result.model_validation && !result.model_validation.accepted && <p>Đã dùng câu hỏi Planner vì đầu ra model không đạt kiểm tra: {result.model_validation.rejection_reasons.join(", ")}.</p>}</div>}
           {facts.length > 0 && <p className="provenance-note">Chỉ hiển thị thông tin do bạn cung cấp; khả năng liên quan do hệ thống gợi ý được hiển thị riêng trong khung hội thoại.</p>}
           <div className="red-flags"><h3>Dấu hiệu cần cấp cứu</h3><p>Gọi 115 ngay nếu có:</p><ul><li>Khó thở hoặc đau ngực</li><li>Ngất, co giật</li><li>Yếu liệt hoặc méo miệng</li><li>Chảy máu nhiều</li></ul></div>
           {result?.limitations && result.limitations.length > 0 && <div className="data-note limitations"><span>ⓘ</span><div><strong>Giới hạn của kết quả</strong><ul>{result.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div></div>}

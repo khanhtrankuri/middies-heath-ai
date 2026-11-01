@@ -71,6 +71,8 @@ class ConsultationResponse(BaseModel):
     missing_information: list[str] = Field(default_factory=list)
     next_question: dict[str, Any] | None = None
     question_source: Literal["model", "template"] | None = None
+    model_validation: dict[str, Any] | None = None
+    model_identity: dict[str, Any] = Field(default_factory=dict)
     assessment: dict[str, Any] | None = None
     emergency_flags: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)

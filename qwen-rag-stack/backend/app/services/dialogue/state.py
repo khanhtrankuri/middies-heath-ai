@@ -15,7 +15,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.triage import _affirmed, find_red_flags
+from app.triage import _affirmed, find_red_flags, is_information_question
 
 from .features import duration_bucket, extract_text_features, max_temperature
 from .lexicon import (
@@ -100,6 +100,7 @@ class DialogueState(BaseModel):
     emergency_flags: list[str] = Field(default_factory=list)
     urgent_flags: list[str] = Field(default_factory=list)
     user_requests_assessment: bool = False
+    unable_to_continue: bool = False
     conversation_status: ConversationStatus = "COLLECTING"
 
     @property
@@ -240,6 +241,8 @@ def extract_dialogue_state(
     features: set[str] = set()
     order: list[str] = []
     for turn, text in user_turns:
+        if is_information_question(text):
+            continue
         for term in SYMPTOMS:
             for match in find_term(text, term):
                 current = mentions.get(term.key)
@@ -249,7 +252,7 @@ def extract_dialogue_state(
                         key=term.key, label=term.label, present=match.affirmed, turn=turn, evidence=match.text
                     )
                 elif match.affirmed and not current.present:
-                    mentions[term.key] = current.model_copy(update={"present": True, "evidence": match.text})
+                    mentions[term.key] = current.model_copy(update={"present": True, "evidence": match.text, "turn": turn})
         if state.chief_complaint is None:
             affirmed = sorted(
                 (match for term in SYMPTOMS for match in find_term(text, term, require_affirmed=True)),
@@ -329,6 +332,10 @@ def extract_dialogue_state(
     state.urgent_flags = [SYMPTOM_BY_KEY[key].label for key in profile.urgent_flags if key in present]
     state.emergency_flags = list(dict.fromkeys(state.emergency_flags))
     state.user_requests_assessment = _requests_assessment(user_turns[-1][1])
+    state.unable_to_continue = bool(re.search(
+        r"\b(?:khong biet|khong ro|khong nho|khong the (?:tra loi|cung cap)|khong muon (?:tra loi|tiep tuc)|dung hoi|dung lai)\b",
+        fold_aligned(user_turns[-1][1]),
+    ))
 
     if state.chief_complaint is None:
         state.missing_information = ["chief_complaint"]
@@ -339,6 +346,8 @@ def extract_dialogue_state(
 
     if state.emergency_flags:
         state.conversation_status = "EMERGENCY"
+    elif state.unable_to_continue or state.questions_asked >= max_questions:
+        state.conversation_status = "READY_FOR_ASSESSMENT"
     elif state.chief_complaint is None:
         state.conversation_status = "COLLECTING"
     elif not state.missing_information or state.questions_asked >= max_questions:
@@ -352,6 +361,8 @@ def extract_dialogue_state(
 
 def _apply_answer(state: DialogueState, slots: set[str], answer: str, turn: int) -> None:
     folded = fold_aligned(answer).strip()
+    if re.search(r"\b(?:khong biet|khong ro|khong nho|khong the tra loi)\b", folded):
+        return
     words = len(folded.split())
     negative = bool(NEGATIVE_ANSWER.match(folded)) and words <= 15
     affirmative = bool(AFFIRMATIVE_ANSWER.match(folded))

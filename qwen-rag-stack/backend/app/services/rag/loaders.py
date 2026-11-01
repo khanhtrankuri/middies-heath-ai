@@ -10,6 +10,7 @@ from .normalizer import content_hash, normalize_text, normalized_hash
 
 SUPPORTED_SUFFIXES = {".txt", ".md", ".markdown", ".json", ".html", ".htm", ".pdf"}
 METADATA_FIELDS = {
+    "source_version", "review_status", "reviewed_by", "reviewed_at",
     "source_id",
     "title",
     "organization",
@@ -37,7 +38,7 @@ def _read_sidecar(path: Path) -> dict[str, Any]:
 
 
 def _metadata(values: dict[str, Any], document_hash: str, **overrides: Any) -> DocumentMetadata:
-    merged = {key: values.get(key) for key in METADATA_FIELDS}
+    merged = {key: values[key] for key in METADATA_FIELDS if key in values}
     for key, value in overrides.items():
         if value is not None:
             merged[key] = value

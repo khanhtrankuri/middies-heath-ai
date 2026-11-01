@@ -61,7 +61,8 @@ def test_consultation_uses_ci_stub_provider() -> None:
             json={"messages": [{"role": "user", "content": "Tôi bị đau bụng."}]},
         )
     assert response.status_code == 200
-    assert response.json()["provider"] == "stub"
+    assert response.json()["provider"] == "planner-template"
+    assert response.json()["model_validation"]["accepted"] is False
     assert response.json()["action"] == "ASK_MORE"
     assert response.json()["reply"]
 
@@ -152,6 +153,8 @@ class _ReadyRAG:
                 organization="Test authority",
                 source_url="https://example.test/migraine",
                 document_hash="a" * 64,
+                source_version="test-fixture-v1", review_status="source_checked",
+                reviewed_by="synthetic test fixture", reviewed_at="2026-10-31",
             ),
         )
 

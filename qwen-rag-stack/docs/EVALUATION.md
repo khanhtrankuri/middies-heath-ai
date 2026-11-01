@@ -75,3 +75,10 @@ biết “đau vai”) vẫn có thể bị tính là hỏi lại — đây là 
   làm nhãn huấn luyện Qwen.
 - **Đánh giá hệ thống đầy đủ qua API với model thật + RAG index:** `evaluate_quality.py` có sẵn nhưng chưa chạy
   trong đợt này.
+
+## E5 — protocol và giới hạn
+
+Benchmark `guided` hỗ trợ E5A/E5B/E5C, báo riêng chấp nhận model và fallback template.
+Metric v4 nhận diện thêm chief complaint và cue sàng lọc/khởi phát theo hồ sơ; `repeated_information_rate` loại lượt không nhận diện slot
+khỏi mẫu số. Rescore tạo thư mục mới, không ghi đè pilot lịch sử. Bộ closed-loop có 107 hồ sơ cố định.
+Định nghĩa, lệnh và các giới hạn suy luận: [PLANNER_GUIDED.md](PLANNER_GUIDED.md#evaluation-and-interpretation).

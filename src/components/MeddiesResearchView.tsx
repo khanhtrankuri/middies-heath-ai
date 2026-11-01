@@ -215,7 +215,7 @@ export const MeddiesResearchView: React.FC<MeddiesResearchViewProps> = ({
               <p className="text-xs text-slate-500 mt-1 font-mono-tabular">
                 {backendStatus.qwenOnline
                   ? `Đang kết nối (${backendStatus.qwenUrl})`
-                  : `Port :8000 (Tự động fallback Cloud)`}
+                  : `Port :8000 (Không chuyển provider khi lỗi)`}
               </p>
             </button>
           </div>

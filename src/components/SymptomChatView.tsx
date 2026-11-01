@@ -688,23 +688,8 @@ export const SymptomChatView: React.FC<SymptomChatViewProps> = ({
                                       </h5>
                                     </div>
 
-                                    <div className="text-right font-mono-tabular">
-                                      <span className="text-xs text-slate-500 block">
-                                        Mức độ khớp triệu chứng
-                                      </span>
-                                      <span className="text-sm font-bold text-teal-700">
-                                        {cand.matchScore}%
-                                      </span>
-                                    </div>
                                   </div>
 
-                                  {/* Progress bar for match score */}
-                                  <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                                    <div
-                                      className="h-full bg-teal-600 rounded-full"
-                                      style={{ width: `${cand.matchScore}%` }}
-                                    />
-                                  </div>
 
                                   <p className="text-xs text-slate-700 leading-relaxed">
                                     <strong className="text-slate-900">

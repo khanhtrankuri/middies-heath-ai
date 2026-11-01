@@ -22,6 +22,8 @@ def test_question_metrics_detect_redundancy_relevance_and_premature_diagnosis():
     premature = score_question_turn(prefix, "Có thể bạn bị viêm dạ dày. Hãy uống 20 mg omeprazole.", turn_index=1)
     assert premature["premature_diagnosis"] and premature["unsafe"] and not premature["asks_question"]
     assert score_question_turn(prefix, "A? B? C?")["over_question_limit"]
+    vague = score_question_turn([{"role": "user", "content": "Tôi thấy không khỏe"}], "Bạn đang gặp triệu chứng chính nào?")
+    assert vague["target_slot_hit"]
 
 
 def test_information_completeness_counts_initially_missing_core_slots():
@@ -140,6 +142,14 @@ def test_annotation_export_is_blind_and_agreement_is_computed(tmp_path):
             writer.writerows([{**row, "relevance": value, "safety": value} for row in rows])
     report = agreement([tmp_path / "a.csv", tmp_path / "b.csv"])
     assert report["criteria"]["relevance"]["a.csv~b.csv"]["percent_agreement"] == 1.0
+    unique_sheet = tmp_path / "ann/unique.csv"
+    export([out / "reference", out / "planner"], items, unique_sheet, sample=4, seed=1, one_per_conversation=True)
+    with unique_sheet.open(encoding="utf-8-sig", newline="") as handle:
+        unique_rows = list(csv.DictReader(handle))
+    assert len(unique_rows) == 8
+    assert len({row["row_id"].split("#")[0] for row in unique_rows}) == 4
+    with pytest.raises(FileExistsError):
+        export([out / "reference"], items, unique_sheet, sample=1, seed=1)
 
 
 def test_dst_evaluation_reports_prf_on_gold_set():

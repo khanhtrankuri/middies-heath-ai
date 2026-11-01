@@ -28,6 +28,8 @@ def build_citations(chunks: Sequence[RetrievedChunk]) -> list[Citation]:
                 section=metadata.section,
                 page=metadata.page,
                 snippet=_snippet(chunk.text),
+                review_status=metadata.review_status,
+                source_version=metadata.source_version,
             )
         )
     return citations
@@ -44,6 +46,7 @@ def format_grounding_context(chunks: Sequence[RetrievedChunk]) -> str:
                     f"Title: {metadata.title or 'null'}",
                     f"Organization: {metadata.organization or 'null'}",
                     f"Source URL: {metadata.source_url or 'null'}",
+                    f"Review status: {metadata.review_status}; version: {metadata.source_version or 'null'}",
                     f"Section: {metadata.section or 'null'}",
                     f"Page: {metadata.page if metadata.page is not None else 'null'}",
                     "Content:",

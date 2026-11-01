@@ -155,6 +155,19 @@ async function startServer() {
         message || '',
         history
       );
+      if (dialogueState.emergencyFlags.length) {
+        res.json({ triageLevel: 'EMERGENCY', triageTitle: 'Cần đánh giá khẩn cấp',
+          summary: 'Hãy gọi 115 hoặc đến cơ sở cấp cứu gần nhất ngay; không chờ tư vấn trực tuyến.',
+          detailedExplanation: 'Tầng an toàn hoạt động độc lập với model và nguồn tham khảo.',
+          possibleCauses: [], selfCareSteps: [], redFlags: dialogueState.emergencyFlags,
+          followUpQuestions: [], activeEngine: 'safety-router', dialogueState });
+        return;
+      }
+      const benchmarkMode = ['1', 'true'].includes(process.env.MEDDIES_BENCHMARK_MODE || '');
+      if (benchmarkMode && (inferenceMode !== 'qwen_local' || imageBase64)) {
+        res.status(400).json({ error: 'Benchmark requires qwen_local text inference; provider substitution is disabled.' });
+        return;
+      }
 
       // Nếu phát hiện câu hỏi ngoài lĩnh vực y tế hoặc Prompt Injection ở tầng Deterministic Guardrail
       if (dialogueState.action === 'OUT_OF_SCOPE' && !imageBase64) {
@@ -220,14 +233,13 @@ async function startServer() {
                 qwenData.action === 'ASK_MORE'
                   ? 'Đang thu thập thêm thông tin triệu chứng (Multi-turn History Taking)'
                   : 'Kết quả phân tích hội thoại & Các bệnh có khả năng liên quan',
-              summary: qwenData.reply || 'Đã xử lý từ mô hình Qwen Fine-tuned.',
+              summary: qwenData.reply || 'Đã nhận kết quả từ backend Qwen.',
               detailedExplanation:
                 qwenData.assessment?.uncertainty ||
                 qwenData.disclaimer ||
-                'Mô hình Qwen fine-tuned trên tập dữ liệu Meddies/meddies-consultant đã phân tích nội dung trao đổi của bạn.',
-              possibleCauses: dialogueState.candidateHypotheses.map(
-                (c) => `${c.name} (Mã ICD-10: ${c.icd10} · Độ khớp: ${c.matchScore}%)`
-              ),
+                'Backend nghiên cứu đã xử lý thông tin trao đổi của bạn.',
+              possibleCauses: qwenData.action === 'FINALIZE' && qwenData.assessment?.eligible
+                ? (qwenData.assessment.candidate_conditions || []).map((c: any) => c.name) : [],
               selfCareSteps: qwenData.assessment?.next_action
                 ? [qwenData.assessment.next_action]
                 : [
@@ -240,21 +252,23 @@ async function startServer() {
                       'Khó thở cấp, đau tức ngực, sốt cao không hạ, nôn ra máu hoặc lơ mơ.',
                     ],
               personalizedNotes:
-                'Đã kết hợp kiểm tra hồ sơ dị ứng & bệnh nền cùng kết quả từ Qwen LoRA Backend.',
+                `Nguồn phản hồi: ${qwenData.provider || 'chưa xác nhận model'}.`,
               followUpQuestions:
                 dialogueState.plannedQuestion?.quickReplies || [
                   'Triệu chứng bắt đầu từ hôm qua',
                   'Tôi không bị sốt hay khó thở',
                 ],
-              activeEngine: `Qwen Fine-Tuned LoRA Backend (${QWEN_BACKEND_URL}) + 7-Stage DST`,
+              activeEngine: qwenData.provider || 'qwen-backend-unidentified',
               dialogueState,
             });
             return;
           } else {
-            fallbackNotice = `Server FastAPI Qwen cục bộ (${QWEN_BACKEND_URL}) trả về mã ${qwenResp.status}. Hệ thống tự động chuyển sang Chế độ Suy luận Trực tuyến kèm RAG Meddies/meddies-consultant.`;
+            res.status(503).json({ error: 'Qwen backend unavailable; no provider fallback.', provider: 'qwen-unavailable' });
+            return;
           }
         } catch {
-          fallbackNotice = `Server FastAPI Qwen cục bộ (${QWEN_BACKEND_URL}) hiện chưa bật trên máy trạm GPU. Hệ thống đã tự động chuyển sang Chế độ Suy luận Trực tuyến kèm RAG Meddies/meddies-consultant để không gián đoạn phiên tư vấn.`;
+          res.status(503).json({ error: 'Qwen backend unavailable; no provider fallback.', provider: 'qwen-unavailable' });
+          return;
         }
       }
 
@@ -305,7 +319,7 @@ TRẠNG THÁI HỎI BỆNH LÂM SÀNG (7-STAGE DIALOGUE STATE TRACKING - DST):
 - Danh sách các bệnh có khả năng liên quan (Candidate Conditions): ${dialogueState.candidateHypotheses
         .map(
           (c) =>
-            `${c.name} (${c.icd10} - Độ khớp ${c.matchScore}% - Khuyến nghị: ${c.recommendedFacility})`
+            `${c.name} (${c.icd10}; gợi ý chưa thẩm định; Khuyến nghị: ${c.recommendedFacility})`
         )
         .join(' | ')}
 `.trim();

@@ -116,3 +116,10 @@ python -m training.data.prepare_dialogue           # ~20–25 phút CPU
 `meddies_dialogue_v1_manifest.json` (id theo split + sha256 từng file), `meddies_dialogue_v1_stats.json`,
 `meddies_dialogue_v1_rejected.jsonl` (chỉ id + mã lý do). Thư mục `data/processed/` nằm trong `.gitignore`;
 không commit dữ liệu.
+
+## E5 planner-guided SFT
+
+Quy trình mới giữ nguyên split Meddies đã công bố, kiểm tra hash/ID/nhóm và loại opening trùng giữa
+split khỏi dữ liệu dẫn xuất. Pilot: 2.000 hội thoại nguồn mỗi split → 234 mẫu train, 208 mẫu validation;
+0 nhãn template, 0 nhãn bác sĩ tự gán. Chi tiết và lệnh tái lập: [PLANNER_GUIDED.md](PLANNER_GUIDED.md).
+Không sử dụng test làm target SFT; tập 200 mẫu chấm bộ lọc đã chuẩn bị, chưa có đánh giá chuyên gia.

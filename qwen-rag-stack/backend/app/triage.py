@@ -133,7 +133,7 @@ def _affirmed(needle: str, prefix: str, suffix: str) -> bool:
         return False
     # Coordination starts a new negation scope. Without this boundary,
     # "không sốt và đang khó thở" incorrectly negates "khó thở" too.
-    clause = re.split(r"\b(?:va|nhung|ma|tuy nhien|and|but|however)\b|[,.;!?\n]", prefix)[-1]
+    clause = re.split(r"\b(?:va|nhung|ma|tuy nhien|bay gio|hien tai|luc nay|and|but|however|now)\b|[,.;!?\n]", prefix)[-1]
     # "không chỉ", "không hết", "không giảm" do not deny the symptom.
     clause = re.sub(r"\b(?:khong (?:chi|het|giam)|not only)\b", "", clause)
     return not re.search(r"\b(?:khong|chua|ko|no|not|without|deny|denies)\b(?:\s+\w+){0,4}\s*$", clause)

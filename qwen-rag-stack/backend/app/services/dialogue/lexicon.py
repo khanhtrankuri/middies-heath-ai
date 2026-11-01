@@ -12,24 +12,25 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from app.triage import _affirmed
 
 _VIETNAMESE_MARKS = re.compile(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]")
 
 
+@lru_cache(maxsize=512)
+def _fold_character(char: str) -> str:
+    # Cache characters only, never patient messages across requests.
+    if char == "đ":
+        return "d"
+    base = "".join(part for part in unicodedata.normalize("NFD", char) if unicodedata.category(part) != "Mn")
+    return base if len(base) == 1 else char
+
+
 def fold_aligned(text: str) -> str:
     """Lowercase and strip diacritics while preserving string length."""
-    out = []
-    for char in unicodedata.normalize("NFC", text).lower():
-        if char == "đ":
-            out.append("d")
-            continue
-        base = "".join(
-            part for part in unicodedata.normalize("NFD", char) if unicodedata.category(part) != "Mn"
-        )
-        out.append(base if len(base) == 1 else char)
-    return "".join(out)
+    return "".join(_fold_character(char) for char in unicodedata.normalize("NFC", text).lower())
 
 
 def normalize(text: str) -> str:
@@ -278,9 +279,9 @@ QUESTION_SLOT_CUES: dict[str, tuple[str, ...]] = {
     "severity": (r"muc do|bao nhieu diem|may diem|thang (?:diem|0|1|10)|tren 10|/10|10 la|nang (?:khong|lam khong)|bao nhieu do|nhiet do|do (?:duoc )?bao nhieu|sot cao nhat",),
     "character": (r"nhu the nao|cam giac (?:nhu|ra sao|the nao)|kieu|am i|quan|nhoi|bong rat|nong rat|ho khan hay|co dom|dom mau|tinh chat|mo ta (?:con|cam giac)",),
     "progression": (r"tang (?:len|dan)|giam (?:di|dan)|dien bien|lien tuc|tung con|luc co luc khong|nang hon|do hon|tai phat|lap lai|bao nhieu lan",),
-    "triggers": (r"sau (?:khi )?an|khi doi|khi van dong|yeu to|lam (?:cho )?(?:dau|trieu chung) nang|lam giam|do hon khi|nang hon khi|khi nam|tu the|tiep xuc|an gi|an uong",),
+    "triggers": (r"sau (?:khi )?(?:an|mang vac|van dong|chan thuong)|khi doi|khi van dong|yeu to|lam (?:cho )?(?:dau|trieu chung) nang|lam giam|do hon khi|nang hon khi|khi nam|tu the|tiep xuc|an gi|an uong",),
     "associated_symptoms": (r"kem theo|di kem|(?<!\w)kem(?!\w)|trieu chung (?:nao )?khac|con (?:bi|thay) gi|co (?:bi |thay )?(?:sot|non|buon non|tieu chay|ho|kho tho|chong mat|met|phat ban|ngua|so mui|dau hong|te|o chua)",),
-    "red_flag_screen": (r"kho tho|dau nguc|yeu (?:hoac |hay )?(?:liet|te)|meo mieng|noi kho|ngat|co giat|non ra mau|phan den|cung co|lo mo|li bi|du doi dot ngot|dot ngot du doi|xuat huyet|moi tim|ho ra mau|bung cung|khong chiu noi",),
+    "red_flag_screen": (r"kho tho|dau nguc|yeu (?:hoac |hay )?(?:liet|te)|te yeu|kiem soat tieu tien|ret run|dau nhieu vung hong lung|meo mieng|noi kho|ngat|co giat|non ra mau|phan den|cung co|lo mo|li bi|du doi dot ngot|dot ngot du doi|xuat huyet|moi tim|ho ra mau|bung cung|khong chiu noi",),
     "relevant_history": (r"tien su|benh nen|benh ly nen|benh man tinh|tung bi|benh (?:gi|ly gi) (?:khac|truoc)|huyet ap|tieu duong|tien can",),
     "medications": (r"thuoc|dang uong|da uong|da dung|dang dung|dieu tri gi",),
     "allergies": (r"di ung",),
@@ -306,7 +307,7 @@ def question_topics(text: str) -> QuestionTopic:
     for question in split_questions(text):
         folded = fold_aligned(question)
         for slot, cues in QUESTION_SLOT_CUES.items():
-            if any(re.search(cue, folded) for cue in cues):
+            if any(re.search(rf"(?<!\w)(?:{cue})(?!\w)", folded) for cue in cues):
                 topic.slots.add(slot)
         # "Mỗi cơn kéo dài bao lâu?" asks about episode length, not onset.
         if "timing" in topic.slots and re.search(r"moi (?:lan|con|dot|khi)|tung con", folded) \
